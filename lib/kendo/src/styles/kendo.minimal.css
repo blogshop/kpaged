@@ -293,8 +293,8 @@ textarea.k-textbox:hover,
 .k-ghost-splitbar-horizontal,
 .k-draghandle.k-state-selected:hover {
   color: #ffffff;
-  background-color: #5DBBFF;
-  border-color: #5DBBFF;
+  background-color: #00529B;
+  border-color: #00529B;
 }
 .k-state-focused,
 .k-list > .k-state-focused,
@@ -418,6 +418,35 @@ div.k-imagebrowser-dropzone em {
 .k-tile-empty strong,
 .k-slider .k-draghandle {
   color: #dddddd;
+}
+/* ListView */
+ul.k-listview {
+	list-style: inner;
+	list-style-type: none;
+	margin-left: 0;
+}
+
+ul.k-listview li {
+	padding: 2px 4px;
+	border-top: 1px solid transparent;
+	border-bottom: 1px solid transparent;
+}
+
+ul.k-listview li:hover {
+	border-top: 1px solid #ccc;
+	border-bottom: 1px solid #ccc;
+	background-color: #00529b;
+	color: #fff;
+}
+
+ul.k-listview li:first-child {
+	border-top: none;
+	padding-top: 3px;
+}
+
+ul.k-listview li:last-child {
+	border-bottom: none;
+	padding-bottom: 3px;
 }
 /* Slider */
 .k-slider-track {
@@ -792,7 +821,7 @@ div.k-imagebrowser-dropzone em {
 }
 .k-tabstrip-items .k-item.k-state-hover,
 .k-panelbar .k-item.k-state-hover {
-	border-color: #5DBBFF;
+	border-color: #888888;
 }
 .k-tabstrip-items .k-item.k-state-active,
 .k-panelbar .k-item.k-state-active {
@@ -818,6 +847,81 @@ div.k-imagebrowser-dropzone em {
   border-color: #00529B;
   border-style: none;
 }
+.k-tabstrip-items .k-loading {
+  border-top: none;
+}
+
+/* Grid Detail */
+.k-detail-row > td {
+	border-top: 1px solid #ccc;
+	border-bottom: 1px solid #ccc;
+}
+.k-detail-row,
+.k-detail-row.k-state-selected, 
+.k-detail-row.k-state-selected {
+  background-color: #fcfcfc;
+  border-color: #ccc;
+}
+
+/* Grid Nested in Grid */
+.k-grid .k-detail-row .k-grid {
+	background: #fff;
+}
+
+/* TabStrip Nested in Grid */
+.k-grid .k-tabstrip-items {
+	margin: 0;
+}
+.k-grid .k-tabstrip-items .k-item, .k-grid .k-tabstrip-items .k-item.k-state-hover {
+  background-color: #fff;
+  border-color: #ccc;
+  border-style: solid;
+  border-width: 1px 1px 0;
+  display: inline-block;
+  margin: 0 -1px 0 0;
+  padding: 0;
+  font-size: 1.0em !important;
+  text-decoration: none;
+}
+.k-grid .k-tabstrip-items .k-item.k-state-hover {
+  border-color: #5DBBFF;
+}
+.k-grid .k-tabstrip-items .k-item:hover, .k-grid .k-tabstrip-items .k-item:hover a, 
+.k-grid .k-tabstrip-items .k-item.k-state-hover, .k-grid .k-tabstrip-items .k-item.k-state-hover a {
+  color: #5DBBFF;
+  text-decoration: none;
+}
+.k-grid .k-tabstrip-items .k-item.k-state-active {
+  color: #fff;
+  background-color: #5DBBFF;
+  border-color: #5DBBFF;
+  border-bottom: none;
+}
+.k-grid .k-tabstrip-items .k-item.k-state-active:hover
+.k-grid .k-tabstrip-items .k-item.k-state-active:hover a,
+.k-grid .k-tabstrip-items .k-item.k-state-active a {
+  color: #fff;
+}
+.k-grid .k-tabstrip-items .k-item.k-first {
+	margin-left: -1px;
+}
+.k-grid .k-tabstrip-items .k-tab-on-top {
+    z-index: 1;
+}
+.k-grid .k-tabstrip-items .k-tab-on-top, .k-grid .k-tabstrip-items .k-state-active {
+  margin-bottom: -1px;
+  padding-bottom: 1px;
+}
+.k-grid .k-tabstrip .k-content {
+  border-style: solid;
+  border-width: 1px;
+  border-color: #5DBBFF;
+  margin: 0 0.29em 0.3em;
+  padding: 0.6em;
+  position: static;
+}
+/* END */
+
 .k-numerictextbox .k-link {
   border-width: 0;
   display: block;

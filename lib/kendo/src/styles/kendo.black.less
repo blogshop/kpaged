@@ -1,5 +1,5 @@
 /*
-* Kendo UI Web v2013.1.319 (http://kendoui.com)
+* Kendo UI Web v2013.3.1119 (http://kendoui.com)
 * Copyright 2013 Telerik AD. All rights reserved.
 *
 * Kendo UI Web commercial licenses may be obtained at
@@ -15,7 +15,8 @@
 
 /* Widget Base Styles */
 @widget-text-color: #fff;
-@widget-gradient: "rgba(255,255,255,.12) 0%, rgba(255,255,255,.08) 50%, rgba(255,255,255,.05) 51%, rgba(255,255,255,.0) 100%";
+//@widget-gradient: "rgba(255,255,255,.12) 0%, rgba(255,255,255,.08) 50%, rgba(255,255,255,.05) 51%, rgba(255,255,255,.0) 100%";
+@widget-gradient:"rgba(255,255,255,.12) 0%, rgba(255,255,255,.20) 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.07) 100%";
 @widget-background-color: #4d4d4d;
 @widget-border-color: #2b2b2b;
 @widget-shadow: none;
@@ -23,7 +24,7 @@
 /* Selects, Dropdowns */
 @select-background-color: #272727;
 @select-border-color: @widget-border-color;
-@select-hover-background-color: #3d3d3d;
+@select-hover-background-color: #080808;
 @select-group-background-color: @select-background-color;
 
 /* Inputs */
@@ -53,15 +54,11 @@
 
 /* Hover State */
 @hover-text-color: @widget-text-color;
-@hover-gradient: "rgba(255,255,255,.12) 0%, rgba(255,255,255,.20) 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.07) 100%";
+//@hover-gradient: "rgba(255,255,255,.12) 0%, rgba(255,255,255,.20) 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.07) 100%";
+@hover-gradient: "rgba(255,255,255,.12) 0%, rgba(255,255,255,.08) 50%, rgba(255,255,255,.05) 51%, rgba(255,255,255,.0) 100%";
 @hover-background-color: #3d3d3d;
 @hover-border-color: @widget-border-color;
 @hover-shadow: none;
-
-/*Focused State*/
-@focused-border-color: @hover-border-color;
-@focused-shadow: 0 0 3px 0 @shadow-color;
-@focused-item-shadow: inset 0 0 3px 1px @hover-border-color;
 
 /* Selected State */
 @selected-text-color: @widget-text-color;
@@ -69,6 +66,12 @@
 @selected-background-color: #0066cc;
 @selected-border-color: #0066cc;
 @selected-shadow: none;
+
+/*Focused State*/
+@focused-border-color: @hover-border-color;
+@focused-shadow: 0 0 3px 0 #0066cc;
+@focused-item-shadow: inset 0 0 3px 1px @hover-border-color;
+@focused-active-item-shadow: inset 0 0 3px 1px darken(@selected-border-color, 15%);
 
 /* Active State */
 @active-text-color: @widget-text-color;
@@ -109,6 +112,25 @@
 
 /* Grid */
 @alt-background-color: #525252;
+@cell-border-color: #444;
+@column-highlight-background-color: #303030;
+
+/* Scheduler */
+@scheduler-background-color: #272727;
+@current-time-color: @error-border-color;
+@event-background-color: #0167cc;
+@event-text-color: @widget-text-color;
+@event-inverse-text-color: @scheduler-background-color;
+@scheduler-nonwork-background-color: #363636;
+@resize-background-color: #fff;
+
+/* Upload */
+@upload-progress-background-color: #366ba0;
+@upload-progress-text-color: @widget-text-color;
+@upload-success-background-color: #3f8b66;
+@upload-success-text-color: @widget-text-color;
+@upload-error-background-color: #aa2929;
+@upload-error-text-color: @widget-text-color;
 
 /* Loading Indicators */
 @loading-panel-color: #666;
@@ -120,10 +142,41 @@
 /* Border Radii */
 @main-border-radius: 4px;
 @list-border-radius: @main-border-radius - 1;
-@inner-border-radius: @main-border-radius - 2;
+@inner-border-radius: @main-border-radius - 1;
 @slider-border-radius: 13px;
 
 /* Icons */
 @default-icon-opacity: 0.85;
 
-@import "template.less";
+@calendar-border-radius: 4px;
+@calendar-content-text-color: @widget-text-color;
+@calendar-footer-background: @widget-background-color;
+@calendar-footer-text-decoration: none;
+@calendar-footer-hover-text-decoration: underline;
+@calendar-footer-hover-background: @widget-background-color;
+@calendar-header-hover-text-decoration: none;
+@calendar-header-hover-background: @hover-background-color;
+@calendar-footer-active-background: @widget-background-color; 
+@button-border-color: @widget-border-color;
+@menu-border-color: #2b2b2b;
+@tabstrip-items-border: @widget-border-color;
+@tabstrip-active-background: @widget-background-color;
+@tabstrip-tabs-color: @widget-text-color;
+@form-widget-color: @widget-text-color;
+@drop-down-border-color: @widget-border-color;
+@drop-down-hover-border-color: #080808;
+@drop-down-focused-border-color: #0066cc;
+@calendar-group-background-color: @group-background-color; 
+@drop-down-background: #272727;
+@drop-down-text-color: @widget-text-color;
+@secondary-border-color: @widget-border-color;
+@secondary-text-color: @widget-text-color;
+@numeric-selected-background: @selected-background-color; 
+@panelbar-items-border: @widget-border-color;
+@panelbar-content-background: @content-background-color;
+@panelbar-content-color: @widget-text-color;
+@window-shadow-style: 1px 1px 7px 1px;
+@filter-menu-content-background: @content-background-color;
+@icon-background-color: transparent;
+
+@import "theme-template.less";
