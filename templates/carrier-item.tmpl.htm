@@ -1,0 +1,10 @@
+<!-- Template defintion and nothing else in the file -->
+<script type="text/x-kendo-template" id="carrier-item-template">
+	<div class="product carrier" data-network="${Value}" data-id="${Key}">
+		<span class="image-container"><img src="images/data/brands/#= Value.toLowerCase().replace(' ', '_') #.png" alt="${Value}" /></span>
+		
+		<button type="button" data-role="button" data-icon="tick" class="k-button k-button-icontext toolInfo accent" role="button" aria-disabled="false" tabindex="0">
+			<!--<i class="fa fa-chain"></i>-->${Value}
+		</button>
+	</div>
+</script>

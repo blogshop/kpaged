@@ -1,0 +1,16 @@
+<!-- Template defintion and nothing else in the file -->
+<script type="text/x-kendo-template" id="summary-item-template">
+<div class="name">
+	<button type="button" title="Delete" class="control delete sprite sprite-delete" data-id="${id}" data-entity-type="${entityType}" data-url="${deleteUrl}" data-message="${deleteMessage}"></button>
+	<a class="link" href="${url}">${name}</a>
+</div>
+</script>
+
+<!-- TreeView: Warning, the widget's screwed. Really. Don't use it.
+<script type="text/x-kendo-template" id="summary-item-template">
+<div class="name">
+	<button title="Delete" class="control delete sprite sprite-delete" data-id="#= data.item.id #" data-url="#= data.item.deleteUrl #" data-message="#= data.item.deleteMessage #"></button>
+	<a class="link" href="#= data.item.url #">#= data.item.name #</a>
+</div>
+</script>
+-->

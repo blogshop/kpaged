@@ -1,0 +1,42 @@
+<!-- Template defintion and nothing else in the file -->
+<script type="text/x-kendo-template" id="tool-item-template">
+	<div class="tool" data-id="${Key}">
+		<fieldset class="info">
+		<!--<h4 class="title">${Value}</h4>-->
+		#
+		var displayPrice = 0;
+		displayPrice = (typeof Price !== 'undefined' && typeof Price === 'number') ? Price : displayPrice;
+		displayPrice = (displayPrice > 0) ? '$' + displayPrice.toFixed(2) : 'Free Unlock!';
+		#
+		<fieldset class="actions">	
+			<button type="button" data-role="button" class="k-button k-button-icontext accent" role="button" aria-disabled="false" tabindex="0">
+				<i class="fa fa-dollar"></i>#= displayPrice #
+			</button>
+			<button type="button" data-role="button" data-icon="tick" class="k-button k-button-icontext toolInfo accent" role="button" aria-disabled="false" tabindex="0">
+				<i class="fa fa-clock-o"></i>${DeliveryMin} - ${DeliveryMax} ${DeliveryUnit}s
+			</button>
+			<button type="button" data-role="button" data-icon="tick" class="k-button k-button-icontext toolInfo accent" role="button" aria-disabled="false" tabindex="0">
+				<span style="font-size: 1.0rem"><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star"></i><i class="fa fa-star-o"></i></span>
+			</button>
+		</fieldset>
+		</fieldset>
+		
+		<fieldset class="actions">
+			<button type="button" data-role="button" class="k-button k-button-icontext toolInfo accent" role="button" aria-disabled="false" tabindex="0">
+				<i class="fa fa-check-square"></i>
+			</button>	
+			<button type="button" data-role="button" class="k-button k-button-icontext accent" role="button" aria-disabled="false" tabindex="0">
+				<i class="fa fa-check"></i>
+			</button>
+			<button type="button" data-role="button" data-icon="tick" class="k-button k-button-icontext toolInfo accent" role="button" aria-disabled="false" tabindex="0">
+				<i class="fa fa-exclamation-circle"></i>
+			</button>
+		</fieldset>
+		<fieldset class="details" style="display: none">
+		<h5><b>Important Unlocking Information</b></h5>
+		<h4 class="title">${Value}</h4>
+		<p>${Message}</p>
+		</fieldset>
+		
+	</div>
+</script>
