@@ -38,6 +38,8 @@ define({
 					fields: []
 				};*/
 				row.style = params.style;
+				console.log('has style');
+				console.log(params.style);
 			}
 			
 			if (params.hasOwnProperty('class')) {
@@ -57,19 +59,20 @@ define({
 			}
 			
 			if (item.hasOwnProperty('data') && Object.keys(item.data).length > 0) {
-				if (item.data.hasOwnProperty('bind') && Object.keys(item.data.bind).length > 0) {
-					if (item.data.bind.hasOwnProperty('groupVisible')) {
-						// The visible binding needs to be set on the fieldgroup instead!
-						config['data'] = {
-							bind: {
-								visible: item.data.bind.groupVisible
+				if (item.data.hasOwnProperty('bind') && item.data.bind !== null) {
+					if (typeof item.data.bind !== 'string' && Object.keys(item.data.bind).length > 0) {
+						if (item.data.bind.hasOwnProperty('groupVisible')) {
+							// The visible binding needs to be set on the fieldgroup instead!
+							config['data'] = {
+								bind: {
+									visible: item.data.bind.groupVisible
+								}
 							}
 							
-						}
-						
-						delete item.data.bind.groupVisible;
-						if (!(Object.keys(item.data.bind).length > 0)) {
-							delete item.data.bind;
+							delete item.data.bind.groupVisible;
+							if (!(Object.keys(item.data.bind).length > 0)) {
+								delete item.data.bind;
+							}
 						}
 					}
 				}

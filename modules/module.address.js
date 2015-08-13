@@ -4,13 +4,29 @@ define({
 	autoBind: false, // If the autoBind parameter is set to false, the module will be bound to the Page's view-model instead of its own
 	autoRender: false,
 	events: {
-		// TODO: This should be registered as a default event handler for all pages
-		// For now, include this function in all page scripts
 		pageLoaded: function (e) {
 			var	that = this,
 				page = App.getCurrent(),
+				eventHandler = that.getEventHandler();
+			
+			console.log('dispatching address "rendered" event');
+			eventHandler.dispatch('rendered');
+		},
+		rendered: function (e) {
+			this.render();
+			$('#' + this.getId()).replaceWith(this.html());
+			
+			// TODO: This is temporary until I figure out a more permanent solution
+			if ((this._viewModel instanceof kendo.data.ObservableObject) === false) {
+				this._viewModel = new kendo.data.ObservableObject();
+			}
+			
+			console.log('rendering address module [' + this._id + ']');
+			var	that = this,
+				page = App.getCurrent(),
 				block = page.getBlock('center-pane'),
-				viewModel = block.getViewModel(),
+				//viewModel = block.getViewModel()
+				viewModel = this.getViewModel(),
 				data = page.getFormData(),
 				addressEventHandler = that.getEventHandler(),
                 addressViewModel = viewModel,
@@ -22,7 +38,7 @@ define({
 				address = [],
 				addressString = [],
 				current;
-				
+			
 			// Window widgets append themselves by default to 
 			// <body>, even if the appendTo parameter has been
 			// specified - Kendo FAIL
@@ -42,7 +58,8 @@ define({
 			for (prop in data) {
 				if (addressViewModel.hasOwnProperty(prop)) {
 					value = data[prop] || '';
-
+					
+					console.log('setting prop: ' + prop + ' | value: ' + value);
 					addressViewModel.set(prop, value);
 				}
 			}
@@ -67,33 +84,37 @@ define({
 			tabs = $('#address-tabs').data('kendoSemanticTabStrip');
 			tab = tabs.select();
 			
-			fields = {
-				// Civic address fields
-				civic: {
-					suiteNumber: $.trim(addressViewModel.get('Addresses[0].suiteNumber')),
-					streetNumber: $.trim(addressViewModel.get('Addresses[0].streetNumber')),
-					streetName: $.trim(addressViewModel.get('Addresses[0].streetName')),
-					streetType: $.trim(addressViewModel.get('Addresses[0].streetType')),
-					streetDirection: $.trim(addressViewModel.get('Addresses[0].streetDirection')),
-					poBox: (addressViewModel.get('Addresses[0].poBox')) ? 'PO BOX ' + $.trim(addressViewModel.get('Addresses[0].poBox')) : ''
-					
-				},
-				// Rural address fields
-				rural: {
-					rr: (addressViewModel.get('Addresses[0].rr')) ? 'RR ' + $.trim(addressViewModel.get('Addresses[0].rr')) : '',
-					site: (addressViewModel.get('Addresses[0].site')) ? 'SITE ' + $.trim(addressViewModel.get('Addresses[0].site')) : '',
-					comp: (addressViewModel.get('Addresses[0].comp')) ? 'COMP ' + $.trim(addressViewModel.get('Addresses[0].comp')) : '',
-					box: (addressViewModel.get('Addresses[0].box')) ? 'BOX ' + $.trim(addressViewModel.get('Addresses[0].box')) : '',
-					lotNumber: (addressViewModel.get('Addresses[0].lotNumber')) ? 'LOT ' + $.trim(addressViewModel.get('Addresses[0].lotNumber')) : '',
-					concessionNumber: (addressViewModel.get('Addresses[0].concessionNumber')) ? 'CONCESSION ' + $.trim(addressViewModel.get('Addresses[0].concessionNumber')) : ''
-				},
-				common: {
-					station: (addressViewModel.get('Addresses[0].station')) ? 'STN ' + $.trim(addressViewModel.get('Addresses[0].station')) : '',
-					city: $.trim(addressViewModel.get('Addresses[0].city')),
-					province: $.trim(addressViewModel.get('Addresses[0].province')),
-					postalCode: $.trim(addressViewModel.get('Addresses[0].postalCode'))
-				}
-			};
+			try {
+				fields = {
+					// Civic address fields
+					civic: {
+						suiteNumber: $.trim(addressViewModel.get('Addresses[0].suiteNumber')),
+						streetNumber: $.trim(addressViewModel.get('Addresses[0].streetNumber')),
+						streetName: $.trim(addressViewModel.get('Addresses[0].streetName')),
+						streetType: $.trim(addressViewModel.get('Addresses[0].streetType')),
+						streetDirection: $.trim(addressViewModel.get('Addresses[0].streetDirection')),
+						poBox: (addressViewModel.get('Addresses[0].poBox')) ? 'PO BOX ' + $.trim(addressViewModel.get('Addresses[0].poBox')) : ''
+						
+					},
+					// Rural address fields
+					rural: {
+						rr: (addressViewModel.get('Addresses[0].rr')) ? 'RR ' + $.trim(addressViewModel.get('Addresses[0].rr')) : '',
+						site: (addressViewModel.get('Addresses[0].site')) ? 'SITE ' + $.trim(addressViewModel.get('Addresses[0].site')) : '',
+						comp: (addressViewModel.get('Addresses[0].comp')) ? 'COMP ' + $.trim(addressViewModel.get('Addresses[0].comp')) : '',
+						box: (addressViewModel.get('Addresses[0].box')) ? 'BOX ' + $.trim(addressViewModel.get('Addresses[0].box')) : '',
+						lotNumber: (addressViewModel.get('Addresses[0].lotNumber')) ? 'LOT ' + $.trim(addressViewModel.get('Addresses[0].lotNumber')) : '',
+						concessionNumber: (addressViewModel.get('Addresses[0].concessionNumber')) ? 'CONCESSION ' + $.trim(addressViewModel.get('Addresses[0].concessionNumber')) : ''
+					},
+					common: {
+						station: (addressViewModel.get('Addresses[0].station')) ? 'STN ' + $.trim(addressViewModel.get('Addresses[0].station')) : '',
+						city: $.trim(addressViewModel.get('Addresses[0].city')),
+						province: $.trim(addressViewModel.get('Addresses[0].province')),
+						postalCode: $.trim(addressViewModel.get('Addresses[0].postalCode'))
+					}
+				};
+			} catch (e) {
+				App.log(e);
+			}
 			
 			// Create a string representation of the address fields
 			if (tab.index() === 0) {
@@ -155,8 +176,13 @@ define({
 			
 			$('#addressDisplay').attr('readonly', false).val(addressString).attr('readonly', true);
 			$('div#addressEditPopup').data('kendoWindow').close();
-			
 			// Create hidden fields in the parent form (if it exists)
+			
+			try {
+				this.dataBind(addressViewModel);
+			} catch (e) {
+				App.log(e);
+			}
 		},
 		initialized: function () {
 			// Do something
@@ -499,7 +525,7 @@ define({
 																value: 'Addresses[0].suiteNumber',
 																events: {
 																	change: function (e) {
-																		var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+																		var viewModel = this,
 																			suiteNumber = viewModel.get('Addresses[0].suiteNumber');
 
 																		if (suiteNumber) {
@@ -527,7 +553,7 @@ define({
 																value: 'Addresses[0].streetNumber',
 																events: {
 																	change: function (e) {
-																		var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+																		var viewModel = this,
 																			streetNumber = viewModel.get('Addresses[0].streetNumber');
 																			
 																		if (streetNumber) {
@@ -555,7 +581,7 @@ define({
 																value: 'Addresses[0].streetName',
 																events: {
 																	change: function (e) {
-																		var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+																		var viewModel = this,
 																			streetName = viewModel.get('Addresses[0].streetName');
 																		
 																		if (streetName)  {
@@ -583,7 +609,7 @@ define({
 																value: 'Addresses[0].streetType',
 																events: {
 																	change: function (e) {
-																		var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+																		var viewModel = this,
 																			streetType = viewModel.get('Addresses[0].streetType');
 																		
 																		if (streetType) {
@@ -629,7 +655,7 @@ define({
 																value: 'Addresses[0].streetDirection',
 																events: {
 																	change: function (e) {
-																		var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+																		var viewModel = this,
 																			streetDirection = viewModel.get('Addresses[0].streetDirection') != null ? viewModel.get('Addresses[0].streetDirection').Value.toUpperCase() : "";
 																			
 																		viewModel.set('Addresses[0].streetDirection', streetDirection);
@@ -656,7 +682,7 @@ define({
 																value: 'Addresses[0].poBox',
 																events: {
 																	change: function (e) {
-																		var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+																		var viewModel = this,
 																			poBox = viewModel.get('poBox');
 																			
 																		if (poBox) {
@@ -697,7 +723,7 @@ define({
 																value: 'Addresses[0].rr',
 																events: {
 																	change: function (e) {
-																		var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+																		var viewModel = this,
 																			rr = viewModel.get('Addresses[0].rr');
 																		
 																		if (rr) {
@@ -725,7 +751,7 @@ define({
 																value: 'Addresses[0].site',
 																events: {
 																	change: function (e) {
-																		var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+																		var viewModel = this,
 																			site = viewModel.get('Addresses[0].site');
 																		
 																		if (site) {
@@ -753,7 +779,7 @@ define({
 																value: 'Addresses[0].comp',
 																events: {
 																	change: function (e) {
-																		var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+																		var viewModel = this,
 																			comp = viewModel.get('Addresses[0].comp');
 																		
 																		if (comp) {
@@ -781,7 +807,7 @@ define({
 																value: 'Addresses[0].box',
 																events: {
 																	change: function (e) {
-																		var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+																		var viewModel = this,
 																			box = viewModel.get('Addresses[0].box');
 																		
 																		if (box) {
@@ -809,7 +835,7 @@ define({
 																value: 'Addresses[0].lotNumber',
 																events: {
 																	change: function (e) {
-																		var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+																		var viewModel = this,
 																			lotNumber = viewModel.get('Addresses[0].lotNumber');
 																		
 																		if (lotNumber) {
@@ -837,7 +863,7 @@ define({
 																value: 'Addresses[0].concessionNumber',
 																events: {
 																	change: function (e) {
-																		var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+																		var viewModel = this,
 																			concessionNumber = viewModel.get('Addresses[0].concessionNumber');
 																		
 																		if (concessionNumber) {
@@ -875,7 +901,7 @@ define({
 												value: 'Addresses[0].station',
 												events: {
 													change: function (e) {
-														var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+														var viewModel = this,
 															station = viewModel.get('Addresses[0].station');
 														
 														if (station) {
@@ -903,7 +929,7 @@ define({
 												value: 'Addresses[0].city',
 												events: {
 													change: function (e) {
-														var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+														var viewModel = this,
 															city = viewModel.get('Addresses[0].city');
 														
 														if (city) {
@@ -953,7 +979,7 @@ define({
 												value: 'Addresses[0].province',
 												events: {
 													change: function (e) {
-														var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+														var viewModel = this,
 															province = viewModel.get('Addresses[0].province') !== null ? viewModel.get('Addresses[0].province').Value.toUpperCase() : '';
 															
 														viewModel.set('Addresses[0].province', province);
@@ -980,7 +1006,7 @@ define({
 												value: 'Addresses[0].postalCode',
 												events: {
 													change: function (e) {
-														var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+														var viewModel = this,
 															postalCode = viewModel.get('Addresses[0].postalCode');
 															
 														if (postalCode)  {
@@ -1019,7 +1045,7 @@ define({
 												value: 'Addresses[0].country',
 												events: {
 													change: function (e) {
-														var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+														var viewModel = this,
 															country = viewModel.get('Addresses[0].country') !== null ? viewModel.get('Addresses[0].country').toUpperCase() : '',
 															dataSource;
 															
@@ -1140,7 +1166,7 @@ define({
 										bind: {
 											events: {
 												click: function (e) {
-													var viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+													var viewModel = this,
 														widget = $('#address-tabs').data('kendoSemanticTabStrip'),
 														tab = widget.select(),
 														fields = {
@@ -1332,6 +1358,7 @@ define({
 												config: {
 													transport: {
 														read: {
+															// TODO: these should be configured
 															url:'Insured.aspx/GetAddress',
 															type: 'POST',
 															data: function () {
@@ -1421,7 +1448,7 @@ define({
 												click: function (e) {
 													var addressLookupGrid = $("#addressLookupGrid").data("kendoGrid"),
 														selectedItem = addressLookupGrid.dataItem(addressLookupGrid.select()),
-														viewModel = App.getCurrent().getBlock('center-pane').getViewModel(),
+														viewModel = this,
 														fields = {
 															// Civic address fields
 															civic: {

@@ -1,11 +1,11 @@
-﻿﻿
+
 /**
  * Kendo UI Paged Application Framework (kPaged)
  * Formerly known as kpaf, but kPaged sounds better
  *
  * @author Lucas Lopatka
  * @version 1.0
- * @props To the good people at AMA for paying me to write stuff that I'm actually interested in!
+ * @props To everyone that pays me to write stuff that I'm actually interested in!
  *
  * This is the Kendo Paged Application Framework core. Don't mess with it unless you're a Jedi Master.
  *
@@ -50,7 +50,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						typeof console.log === 'object';
 				};
 
-			log.history = log.history || []; // store logs to an array for reference
+			log.history = log.history || new kendo.data.ObservableArray([]); // store logs to an array for reference
 			log.history.push(arguments);
 
 			// If the detailPrint plugin is loaded, check for IE10- pretending to be an older version,
@@ -496,7 +496,8 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 								errorHandler = current.getErrorHandler(),
 								errorPanel = $('[name=ErrorPanel]').data('kendoEventPanelBar');
 
-							if (validator.silentValidate() === false) {
+							// TODO: This fucking method keeps failing what the fuck is up with the goddamn validator that it isn't attaching
+							if (validator.hasOwnProperty('silventValidate') && validator.silentValidate() === false) {
 								errorHandler.setErrors('validation', validator._errors);
 							}
 						}
@@ -588,13 +589,12 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						$.each(widgetTypes, function (widgetRole, widgetConfig) {
 							if (widgetConfig.hasOwnProperty('type')) {
 								widgets = $('.k-widget').find('[data-role=' + widgetRole + ']');
-								
 								if (widgets) {
 									widgets.each(function (idx, widget) {
 										if (App.getConfig('debug') === true) {
-											App.log('Triggering pageLoaded event on ' + widgetConfig.type + ' widget attached to:');
+											/*App.log('Triggering pageLoaded event on ' + widgetConfig.type + ' widget attached to:');
 											App.log(widget);
-											App.log($(widget));
+											App.log($(widget));*/
 										}
 										
 										if (typeof $(widget).data(widgetConfig.type) !== 'undefined') {
@@ -1460,7 +1460,20 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					}
 				});
 				
-				response = $.ajax(ajaxOptions);
+				var startTime = new Date().getTime(),
+					endTime;
+					
+				if (App.getConfig('debug') === true) {
+					App.log('Attempting to load file [' + source + ']');
+				}
+				
+				response = $.ajax(ajaxOptions).done(function () {
+					if (App.getConfig('debug') === true) {
+						endTime = new Date().getTime() - startTime;
+						
+						App.log('File [' + source + '] loaded in ' + endTime.toString() + 'ms');
+					}
+				});
 				
 				// Return the jqXHR object so we can chain callbacks
 				return response;
@@ -1573,7 +1586,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 			},
 			add: function (pattern, callback) {
 				pattern = pattern;
-				App.log('attempting to match pattern [' + pattern + ']');
+				App.log('Attempting to match pattern [' + pattern + ']');
 				
 				// Default -- no controller, just render the page
 				callback = callback || function (args) {
@@ -1858,7 +1871,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 			},
 			addEventListener: function (eventName, callback, scope) {
 				if (App.getConfig('debug') === true) {
-					//App.log('adding listener for the ' + eventName + ' event');
+					//App.log('Adding listener for the ' + eventName + ' event');
 					
 					if (typeof scope !== 'undefined') {
 						//App.log('event scope: ');
@@ -3158,8 +3171,6 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					eventHandlerAdapter = App.EventHandlers.Adapters.Signals(App.getConfig('pageEvents'));
 					eventHandler = that._eventHandler = Object.create(App.EventHandler(eventHandlerAdapter), {});
 					
-					
-					
 					// Register layout
 					that._layout = Object.create(App.Page.Layout.Blocks(), {});
 					
@@ -3225,15 +3236,14 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 								// Data-bind module instances to their respective layouts
 								that._modules.each(function (name, instance) {
 									// TODO: Nested block binding still isn't working right in modules
+									// TODO: Confirm... there have been changes
 									if (instance.autoBind === false && instance.dataBound === false) {										
 										instance.dataBind(block.getViewModel());
 									} else {
 										instance.dataBind();
 									}
-
 								});
-								
-
+							
 							} else {
 								if (App.getConfig('debug') === true) {
 									App.log('Could not initialize the ' + node.id + ' block');
@@ -3466,9 +3476,6 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					errorPanel = $('[name=ErrorPanel]').data('kendoObservingPanelBar');
 					errorHandler.subscribe('errors', errorPanel);
 					
-					console.log('the block');
-					console.log(block);
-					
 					// Check if an ID was set in the request, otherwise try to pull it from the query string
 					id = (request.hasOwnProperty('id') && request.id !== '') ? request.id : App.Helpers.URL.getParam('id');
 
@@ -3476,7 +3483,6 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						if (typeof config.route === 'object') {
 							if (!config.route.hasOwnProperty('read')) {
 								doRead = false; // Just for clarity...
-								return false;
 							} else {
 								if (config.route.hasOwnProperty('autoRead')) {
 									if (config.route.autoRead !== true) {
@@ -3487,9 +3493,15 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 								}
 							}
 						} else {
-							return false;
+							if (App.getConfig('debug') === true) {
+								App.log('The current page configuration contains an invalid route definition');
+							}
 						}
 					} else {
+						if (App.getConfig('debug') === true) {
+							App.log('The current page configuration does not contain a route definition');
+						}
+						
 						return false;
 					}
 					
@@ -3497,6 +3509,10 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					// TODO: This should be configurable
 					// Maybe we should be using a handler instead?
 					if (doRead && id !== null) {
+						if (App.getConfig('debug') === true) {
+							App.log('The current page\'s "autoRead" route parameter has been set to true');
+						}
+						
 						ajaxDefaults = {
 							type: 'POST',
 							contentType: 'application/json; charset=utf-8',
@@ -3506,6 +3522,11 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 							beforeSend: function (xhr, settings) {
 								// Trigger the Page's loading event
 								if (eventHandler.hasEvent('loading')) {
+									if (App.getConfig('debug') === true) {
+										App.log('Attempting to fetch data...');
+										App.log('Triggering the current page\'s "loading" event');
+									}
+									
 									event = eventHandler.getEvent('loading');
 									event.dispatch(xhr, settings);
 								}
@@ -3523,18 +3544,15 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 										
 										// Get the view-model
 										block = that.getBlock(that.getPrimaryBlockName());
-										console.log('request complete this is the block');
-										console.log(block);
-										
-										if (App.getConfig('debug') === true) {
-											App.log('loading data for the following block: ' + block.getId());
-											App.log(block);
-										}
 										
 										viewModel = block.getViewModel();
 
 										// Trigger Page's beforePopulate event
 										if (eventHandler.hasEvent('beforePopulate')) {
+											if (App.getConfig('debug') === true) {
+												App.log('Triggering the current page\'s "beforePopulate" event');
+											}
+											
 											event = eventHandler.getEvent('beforePopulate');
 											event.dispatch(xhr, status, data);
 										}
@@ -3562,8 +3580,16 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 											}
 										}
 										
+										if (App.getConfig('debug') === true) {
+											App.log('Page data populated');
+										}
+										
 										// Trigger the Page's loaded event
 										if (eventHandler.hasEvent('loaded')) {
+											if (App.getConfig('debug') === true) {
+												App.log('Triggering the current page\'s "loaded" event');
+											}
+											
 											event = eventHandler.getEvent('loaded');
 											event.dispatch(xhr, status);
 										}
@@ -3603,25 +3629,28 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						
 						response = $.ajax(ajaxDefaults);
 					} else if (doRead === false) {
+						App.log('The current page\'s "autoRead" route parameter has been set to false');
+						
 						// Trigger Page's loaded event
 						if (eventHandler.hasEvent('loaded')) {
+							if (App.getConfig('debug') === true) {
+								App.log('Triggering the current page\'s "loaded" event');
+							}
+							
 							event = eventHandler.getEvent('loaded');
 							event.dispatch();
 						}
 
 						// Get the view-model
 						block = that.getBlock(that.getPrimaryBlockName());
-						console.log('request complete this is the block');
-						console.log(block);
-						
-						if (App.getConfig('debug') === true) {
-							App.log('loading data for the following block: ' + block.getId());
-							App.log(block);
-						}
 						
 						viewModel = block.getViewModel();
 					}
-
+					
+					if (App.getConfig('debug') === true) {
+						App.log('Attempting to bind page validations...');
+					}
+					
 					if (typeof block !== 'undefined') {
 						binder = block.getBinder();
 						
@@ -3633,8 +3662,17 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						}
 					}
 					
-					modules = App.getCurrent().getModules();
+					if (App.getConfig('debug') === true) {
+						App.log('Page validation binding unsuccessful - I probably should finish this :)');
+					}
 					
+					if (App.getConfig('debug') === true) {
+						App.log('Page validation binding complete');
+					}
+					
+					modules = App.getCurrent().getModules();
+					console.log('MODULES');
+					console.log(modules);
 					if (modules !== 'undefined') {
 						modules.each(function (moduleName, module) {
 							moduleEventHandler = module.getEventHandler();
@@ -3644,16 +3682,6 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 							}
 						});
 					}
-					
-					/*if (typeof block !== 'undefined') {
-						binder = block.getBinder();
-						
-						if (binder !== 'undefined') {
-							config = this._config;
-							validationConfig = (config.hasOwnProperty('validation')) ? config.validation : false;
-							binder.bindValidation('#' + App.getPrimaryBlockName(), validationConfig);
-						}
-					}*/
 					
 					// Trigger Page's isLoaded event
 					if (eventHandler.hasEvent('isLoaded')) {
@@ -4038,13 +4066,10 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						that.autoBind = (config.autoBind === false) ? false : that.autoBind;
 						
 						if (App.getConfig('debug') === true) {
-							App.log('----------------------------');
-							App.log('block.init config: ');
+							App.log('Initializing block [' + config.id + ']');
+							App.log('Block.init() config: ');
 							App.log(config);
-							App.log('block.init config id: ' + config.id);
-							App.log('block.init config: ');
-							App.log(config);
-							App.log('autoBind: ' + that.autoBind);
+							App.log('autoBind: ' + that.autoBind + ' | autoRender: ' + that.autoRender);
 						}
 						
 						// Store a reference to the block's layout configuration
@@ -4084,9 +4109,11 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						}
 						
 						if (App.getConfig('debug') === true) {
-							App.log('binding block id: ' + id);
-							App.log('validation config: ');
-							App.log(validationConfig);
+							App.log('Binding block [' + id + ']');
+							if (validationConfig) {
+								App.log('Block validation config: ');
+								App.log(validationConfig);
+							}
 						}
 						
 						// Set view-model
@@ -4372,17 +4399,16 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						that._config = config;
 						that._links = config.links;
 						
+						// The autoRender parameter specifies whether or not the parent BlockDirector should render the module as part of the page rendering process
 						that.autoRender = config.autoRender || that.autoRender;
 						that.autoBind = (config.autoBind === false) ? false : that.autoBind;
 						
 						if (App.getConfig('debug') === true) {
-							App.log('----------------------------');
-							App.log('module.init config: ');
-							App.log(config);
-							App.log('module.init config id: ' + config.id);
-							App.log('module.init config: ');
+							App.log('Initializing module [' + config.id + ']');
+							App.log('Module.init() config: ');
 							App.log(config);
 							App.log('autoBind: ' + that.autoBind);
+							App.log('autoRender: ' + that.autoRender);
 						}
 						
 						// Store a reference to the module's layout configuration
@@ -4423,11 +4449,6 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						if (eventHandler.hasEvent('initialized')) {
 							event = eventHandler.getEvent('initialized');
 							event.dispatch();
-						}
-						
-						// Auto-render
-						if (this.autoRender === true) {
-							this.render();
 						}
 						
 						return this;
@@ -4602,6 +4623,8 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 				_voidElements: [],
 				_inputElements: [],
 				_prevLevel: 0,
+				_modules: undefined,
+				_blocks: undefined,
 				
 				init: function (block, page, builder, binder) {
 					block = block || '';
@@ -4771,6 +4794,114 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					
 					return isVoidElement;
 				},
+				// (string) type
+				// (string) block | module name
+				getConfig: function (node) {
+					var type = (node.hasOwnProperty('module')) ? 'module' : (node.hasOwnProperty('block')) ? 'block' : null,
+						name = null,
+						registry = null,
+						config = null;
+					
+					if (type === 'module') this._modules = this._modules || App.getConfig('modules');
+					if (type === 'block') this._blocks = this._blocks || App.getConfig('blocks');
+					
+					registry = (type === 'module') ? this._modules : (type === 'block') ? this._blocks : null;
+					if (type !== null) name = node[type];
+					
+					// Get the configuration 
+					if (registry && name && registry.has(name)) {
+						config = $.extend({}, registry.get(name));
+					} else if (node.hasOwnProperty('config')) {
+						config = $.extend({}, node.config);
+					} else {
+						config = false;
+						
+						if (App.getConfig('debug') === true) {
+							App.log('No configuration was found for the supplied ' + type + '. Make sure the file has been added correctly in the bootstrap.');
+						}
+					}
+					
+					return config;
+				},
+				generateUID: function (type, collection, node, config) {
+					var type = type || 'block',
+						idRegex,
+						matches,
+						matchIndex,
+						matchIndexes = [],
+						suffix = (node.hasOwnProperty('suffix')) ? node.suffix : null,
+						name,
+						layout,
+						templates;
+						
+					if (type !== 'block' && type !== 'module') throw new Error('UID generation failed - a valid block type was not specified');
+					
+					suffix = suffix || null;
+					name = (suffix !== null) ? [type, node[type], suffix].join('_') : type + '_' + node[type];
+					idRegex = new RegExp('^' + name + '_(\\d+)$');
+					
+					// TODO: We need a way to determine the type of collection provided
+					$.each(collection.keys(), function (idx, id) {
+						matches = id.match(idRegex);
+						
+						if (matches !== null) {
+							matchIndexes.push(parseInt(matches.pop()));
+						}
+					});
+					
+					if (matchIndexes.length > 0) {
+						matchIndexes = matchIndexes.sort(function (a,b) { return a-b; } );
+						
+						// Update the block config object
+						config.id = name + '_' + (matchIndexes.pop() + 1).toString();
+					} else {
+						// Update the block config object
+						config.id = name + '_1';
+					}
+					
+					if (App.getConfig('debug') === true) {
+						App.log('Assigning ' + type + ' ID: ' + config.id);
+					}
+				},
+				setLayout: function (node, config) {
+					var templates = (config.layout.hasOwnProperty('templates')) ? config.layout.templates : false,
+						layout;
+					
+					// We're iterating over the page layout nodes, so we need to repackage them
+					if (templates) {
+						// Use a custom template, if one has been specified in the block configuration
+						if (config.hasOwnProperty('template') && templates.hasOwnProperty(config.template)) {
+							layout = templates[config.template];
+						} else if (templates.hasOwnProperty('default')) {
+							layout = templates.default;
+						} else {
+							layout = templates;
+						}
+					} else {
+						layout = config.layout;
+					}
+					
+					// Set the ID
+					layout.id = config.id;
+					
+					if (typeof layout !== 'undefined') {
+						$.extend(config, { layout: layout });
+					}
+					
+					// TODO: Pull this out
+					if (node.hasOwnProperty('links')) {
+						$.extend(config, { links: current.links });
+					}
+					
+					if (node.hasOwnProperty('config') && node.config.hasOwnProperty('items')) {
+						$.extend(config, { items: node.config.items });
+					}
+					
+					if (node.hasOwnProperty('config') && node.config.hasOwnProperty('params')) {
+						$.extend(config, { params: node.config.params });
+					}
+					// END TODO
+				},
 				build: function (obj, level, type) {
 					var that = this,
 						type = type || null,
@@ -4809,98 +4940,19 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						
 						// Is the current node a module?
 						if (current.hasOwnProperty('module') && current.module !== '') {
-							modulesConfig = App.getConfig('modules');
-							if (App.getConfig('debug') === true) {
-								App.log('-- current module --');
-								App.log(current);
-							}
+							moduleConfig = that.getConfig(current);
 							
-							// Get the module configuration 
-							if (modulesConfig.has(current.module)) {
-								moduleConfig = modulesConfig.get(current.module);
-							} else if (current.hasOwnProperty('config')) {
-								moduleConfig = current.config;
-							} else {
-								moduleConfig = false;
-								
-								if (App.getConfig('debug') === true) {
-									App.log('No configuration was found for the supplied module. Make sure the file has been added correctly in the bootstrap.');
-								}
-							}
+							App.log('----------------------------');
+							App.log('Creating new ' + current.module + ' module');
 							
-							if (modulesConfig.has(current.module) && moduleConfig) {
-								modules = page.getModules();
+							if (that._modules.has(current.module) && moduleConfig) {
+								registeredModules = page.getModules();
 								
-								var idRegex,
-									matches,
-									matchIndex,
-									matchIndexes = [],
-									moduleSuffix = (current.hasOwnProperty('suffix')) ? current.suffix : null,
-									moduleName,
-									moduleLayout,
-									moduleTemplates;
-									
-									moduleSuffix = moduleSuffix || null;
-									moduleName = (moduleSuffix !== null) ? ['module', current.module, moduleSuffix].join('_') : 'module_' + current.module;
-									idRegex = new RegExp('^' + moduleName + '_(\\d+)$');
-								
-								$.each(modules.keys(), function (idx, id) {
-									matches = id.match(idRegex);
-									
-									if (matches !== null) {
-										matchIndexes.push(parseInt(matches.pop()));
-									}
-								});
-								
-								if (matchIndexes.length > 0) {
-									matchIndexes = matchIndexes.sort(function (a,b) { return a-b; } );
-									
-									// Update the module config object
-									moduleConfig.id = moduleName + '_' + (matchIndexes.pop() + 1).toString();
-								} else {
-									// Update the module config object
-									moduleConfig.id = moduleName + '_1';
-								}
-								
-								if (App.getConfig('debug') === true) {
-									App.log('module id: ' + moduleConfig.id);
-								}
+								that.generateUID('module', registeredModules, current, moduleConfig);
 							}
 							
 							if (moduleConfig && moduleConfig.hasOwnProperty('layout')) {								
-								// We're iterating over the page layout nodes, so we need to repackage them
-								if (moduleConfig.layout.hasOwnProperty('templates')) {
-									moduleTemplates = moduleConfig.layout.templates;
-									
-									// Use a custom template, if one has been specified in the block configuration
-									if (moduleConfig.hasOwnProperty('template') && moduleTemplates.hasOwnProperty(moduleConfig.template)) {
-										moduleLayout = moduleTemplates[moduleConfig.template];
-									} else if (moduleTemplates.hasOwnProperty('default')) {
-										moduleLayout = moduleTemplates.default;
-									} else {
-										moduleLayout = moduleTemplates;
-									}
-									
-									if (typeof moduleLayout !== 'undefined') {
-										if (current.hasOwnProperty('links')) {
-											// Set the layout
-											$.extend(moduleConfig, {
-												layout: moduleLayout,
-												links: current.links
-											});
-										} else {
-											// Set the layout
-											$.extend(moduleConfig, {
-												layout: moduleLayout
-											});
-										}
-									}
-								} else {
-									moduleLayout = moduleConfig.layout;
-								}
-								
-								// Set the ID
-								moduleLayout.id = moduleConfig.id;
+								that.setLayout(current, moduleConfig);
 								
 								// Create a new module from the module configuration, if it exists
 								module = (moduleConfig) ? App.Page.Layout.Module(page, moduleConfig) : false;
@@ -4908,110 +4960,20 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						}
 						// Is the current node a block?
 						else if (current.hasOwnProperty('block') && current.block !== '') {
-							blocksConfig = App.getConfig('blocks');
+							blockConfig = that.getConfig(current);
 							
-							/*if (App.getConfig('debug') === true) {
-								App.log('## current block ##');
-								App.log(current);
-							}*/
+							App.log('----------------------------');
+							App.log('Creating new ' + current.block + ' block');
 							
-							// Get the block configuration 
-							if (blocksConfig.has(current.block)) {
-								blockConfig = $.extend({}, blocksConfig.get(current.block));
-							} else if (current.hasOwnProperty('config')) {
-								blockConfig = $.extend({}, current.config);
-							} else {
-								blockConfig = false;
+							if (that._blocks.has(current.block) && blockConfig) {
+								registeredBlocks = page.getBlocks();
+								that.generateUID('block', registeredBlocks, current, blockConfig);
 							}
 							
-							if (blocksConfig.has(current.block) && blockConfig) {
-								blocks = page.getBlocks();
+							if (blockConfig && blockConfig.hasOwnProperty('layout')) {
+								that.setLayout(current, blockConfig);
 								
-								var idRegex,
-									matches,
-									matchIndex,
-									matchIndexes = [],
-									blockSuffix = (current.hasOwnProperty('suffix')) ? current.suffix : null,
-									blockName,
-									blockLayout,
-									blockTemplates;
-									
-									blockSuffix = blockSuffix || null;
-									blockName = (blockSuffix !== null) ? ['block', current.block, blockSuffix].join('_') : 'block_' + current.block;
-									idRegex = new RegExp('^' + blockName + '_(\\d+)$');
-								
-								$.each(blocks.keys(), function (idx, id) {
-									matches = id.match(idRegex);
-									
-									if (matches !== null) {
-										matchIndexes.push(parseInt(matches.pop()));
-									}
-								});
-								
-								if (matchIndexes.length > 0) {
-									matchIndexes = matchIndexes.sort(function (a,b) { return a-b; } );
-									
-									// Update the block config object
-									blockConfig.id = blockName + '_' + (matchIndexes.pop() + 1).toString();
-								} else {
-									// Update the block config object
-									blockConfig.id = blockName + '_1';
-								}
-								
-								if (App.getConfig('debug') === true) {
-									App.log('block id: ' + blockConfig.id);
-								}
-							}
-							
-							if (blockConfig && blockConfig.hasOwnProperty('layout')) {								
-								// We're iterating over the page layout nodes, so we need to repackage them
-								if (blockConfig.layout.hasOwnProperty('templates')) {
-									blockTemplates = blockConfig.layout.templates;
-									
-									// Use a custom template, if one has been specified in the block configuration
-									if (blockConfig.hasOwnProperty('template') && blockTemplates.hasOwnProperty(blockConfig.template)) {
-										blockLayout = blockTemplates[blockConfig.template];
-									} else if (blockTemplates.hasOwnProperty('default')) {
-										blockLayout = blockTemplates.default;
-									} else {
-										blockLayout = blockTemplates;
-									}
-									
-									if (typeof blockLayout !== 'undefined') {
-										$.extend(blockConfig, { layout: blockLayout });
-										
-										if (current.hasOwnProperty('links')) {
-											$.extend(blockConfig, { links: current.links });
-										}
-										
-										if (current.hasOwnProperty('config') && current.config.hasOwnProperty('items')) {
-											$.extend(blockConfig, { items: current.config.items });
-										}
-										
-										if (current.hasOwnProperty('config') && current.config.hasOwnProperty('params')) {
-											$.extend(blockConfig, { params: current.config.params });
-										}
-									}
-								} else {
-									blockLayout = blockConfig.layout;
-									
-									if (current.hasOwnProperty('links')) {
-										$.extend(blockConfig, { links: current.links });
-									}
-									
-									if (current.hasOwnProperty('config') && current.config.hasOwnProperty('items')) {
-										$.extend(blockConfig, { items: current.config.items });
-									}
-									
-									if (current.hasOwnProperty('config') && current.config.hasOwnProperty('params')) {
-										$.extend(blockConfig, { params: current.config.params });
-									}
-								}
-								
-								// Set the ID
-								blockLayout.id = blockConfig.id;
-								
-								// Create a new block from the block configuration, if it exists
+								// Create a new module from the module configuration, if it exists
 								block = (blockConfig) ? App.Page.Layout.Block(page, blockConfig) : false;
 							}
 							
@@ -5037,73 +4999,101 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 							});
 						}
 						
-						if (module) {
+						// Process blocks/modules
+						if (block || module) {
 							maxNesting = true;
-
-							attributes = {};
 							
-							$.each(module.getLayout(), function(key, value) {
-								if (that._attributes.indexOf(key) !== -1) {
-									attributes[key] = value;
+							var setLayout = function (type, block, config) {
+								// Only blocks have layouts
+								if (type === 'block') {
+									if (config.hasOwnProperty('setLayout') && typeof config.setLayout === 'function') {
+										// Extend the block with the custom setLayout method defined in the config object
+										$.extend(true, block, {
+											setLayout: config.setLayout
+										});
+										
+										if (config.hasOwnProperty('items')) {
+											block.setLayout(config.items);
+										}
+									}
 								}
-							});
+							};
 							
-							module.getBuilder().setRoot(module.getLayout().tag, attributes);
-							
-							if (isFirst === true) {
-                                builder.append(module.render().html())
+							var setAttributes = function (block, attributes) {
+								// TODO: This needs a better check
+								if (typeof attributes === 'undefined' || typeof attributes !== 'object') {
+									throw new Error('Invalid attribute object provided');
+								}
 								
-								isFirst = false;
-							} else {
-                                builder.add(module.render().html());
-							}
-							
-							// Store the module instance
-							page.setModule(module._id, module);
-							
-						} else if (block) {
-							maxNesting = true;
-							
-							console.log('we are on block id: ' + block._id);
-							
-							if (blockConfig.hasOwnProperty('setLayout') && typeof blockConfig.setLayout === 'function') {
-								// Extend the block with the custom setLayout method defined in the config object
-								$.extend(true, block, {
-									setLayout: blockConfig.setLayout
+								$.each(block.getLayout(), function(key, value) {
+									if (that._attributes.indexOf(key) !== -1) {
+										attributes[key] = value;
+									}
 								});
+							};
+							
+							if (module) {
+								attributes = {};
+								setAttributes(module, attributes);
 								
-								if (blockConfig.hasOwnProperty('items')) {
-									block.setLayout(blockConfig.items);
+								module.getBuilder().setRoot(module.getLayout().tag, attributes);
+								
+								if (isFirst === true) {
+									if (module.autoRender === true) {
+										builder.append(module.render().html());
+									} else {
+										builder.append(module.getLayout().tag, {
+											id: module._id,
+											data: {
+												module: current.module,
+											}
+										});
+									}
+									
+									isFirst = false;
+								} else {
+									if (module.autoRender === true) {
+										builder.add(module.render().html());
+									} else {
+										builder.add(module.getLayout().tag, {
+											id: module._id,
+											data: {
+												module: current.module
+											}
+										});
+									}
 								}
+								
+								// Store the module instance
+								page.setModule(module._id, module);
 							}
 							
-							attributes = {};
-							
-							$.each(block.getLayout(), function(key, value) {
-								if (that._attributes.indexOf(key) !== -1) {
-									attributes[key] = value;
-								}
-							});
-							
-							block.getBuilder().setRoot(block.getLayout().tag, attributes);
-							
-							if (isFirst === true) {
-                                builder.append(block.render().html());
+							if (block) {
+								setLayout('block', block, blockConfig);
 								
-								isFirst = false;
-							} else {
-                                builder.add(block.render().html());
+								attributes = {};
+								setAttributes(block, attributes);
+								
+								block.getBuilder().setRoot(block.getLayout().tag, attributes);
+								
+								if (isFirst === true) {
+									builder.append(block.render().html());
+									
+									isFirst = false;
+								} else {
+									builder.add(block.render().html());
+								}
+								
+								// Store the block instance
+								page.setBlock(block._id, block);
 							}
-							
-							// Store the block instance
-							page.setBlock(block._id, block);
 						} else if (isDOMElement) {							
 							if (App.getConfig('debug') === true) {
 								//App.log('-- current element --');
 								//App.log(current);
 							}
-							maxNesting = (this.isVoid(current.tag)) ? true : false;
 							
+							maxNesting = (this.isVoid(current.tag)) ? true : false;
 							
 							// MOVE: To Metadata Validation WI
 							// TODO: Refactor this into a kPaged plugin - which also involves adding plugin functionality!
@@ -5119,52 +5109,222 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 								//current.type = 'newtype';
 							}
 							
-							// Questions?
-							// 1. Has a value binding been set? Automatic entity binding should *not* work unless a value has been defined
-							// 2. Has a widget role been defined?
+							//this.setEntityValidations(bindings);
 							
-							var setEntityValidations = function (bindings) {
-								var info,
-									entityMetadata,
-									fieldMetadata,
-									metadataConfig = App.Config.Metadata,
-									arrayRegex = /(?:^.*?)(\[\d+\])/;
-									
-								info = {
-									entity: null, // Get from binding
-									fieldName: null, // Get from binding
-									bindPath: null, // Get from binding
-									role: null
-								};
-								var bindPath,
-									chunkIndex,
-									currentChunk;
+							//this.setShorthandValidations(shorthandValidations, current);
+							
+							//this.setValidations();
+							
+							if (isFirst === true) {
+								builder.append(current.tag, attributes);
 								
-								for (var prop in bindings) {
-									switch (prop) {
-										case 'role':
-											info.role = bindings.role;
-											break;
+								isFirst = false;
+							} else {
+								builder.add(current.tag, attributes);
+							}
+							
+							// MOVE: To Metadata Validation WI
+							// TODO: Refactor this into a kPaged plugin - which also involves adding plugin functionality!
+							var validation;
+							
+							if (current.hasOwnProperty('validation')) {
+								builder.setAttributes(builder.getCurrent(), validationAttributes);
+								validationAttributes = {};
+								
+								validation = builder.addAfter(builder.getCurrent(), 'span', {
+									class: 'k-invalid-msg',
+									data: {
+										for: builder.getCurrent().id
+									}
+								});
+							}
+							
+							if (attributes.hasOwnProperty('data') && attributes.data.hasOwnProperty('role')) {
+								if (attributes.data.role === 'semantictabstrip' && current.hasOwnProperty('tabs')) {
+									if (App.getConfig('debug') === true) {
+										App.log('Building tabs [' + current.id + ']');
+										App.log(current.tabs);
+									}
+									
+									App.Widgets.Helpers.SemanticTabStrip.build(builder, current.tabs);
+								}
+								
+								if (attributes.data.role === 'panelbar' || attributes.data.role === 'eventpanelbar') {
+									if (current.data.hasOwnProperty('items')) {
+										App.Widgets.Helpers.PanelBar.build(builder, current.data.items);
+									}
+								}
+							}
+							
+							that.applyShortcuts(builder, current);
+							
+							// Clear attributes or stuff will bomb!
+							attributes = {};
+							
+							// END TODO
+						}
+						
+						// Are there child nodes? If so, recurse...
+						if (iterator.hasChildren()) {
+							children = iterator.getChildren();							
+							
+							if (maxNesting === false) {				
+								// Recurse
+								level = (isDOMElement) ? level + 1 : level;
+								that.build(children, level);
+							}
+						}
+						
+						// Reset variables for reuse
+						block = false;
+						module = false;
+						
+						// Move to the next node
+						iterator.next();
+					} while (iterator.hasNext());
+					
+					if (isDOMElement || isBlock || isModule) {
+						console.log('has next? ' + iterator.hasNext().toString());
+						
+						if (iterator.hasNext() === false) {
+							builder.parent();
+						}
+					}
+				},
+				setValidations: function (bindings) {
+					if (current.hasOwnProperty('validation')) {
+						if (!current.validation.hasOwnProperty('messages') && !current.validation.hasOwnProperty('rules')) {
+							setShorthandValidations(current.validation);
+						}
+						
+						if (attributes.hasOwnProperty('data') && typeof attributes.data !== 'undefined') {
+							if (attributes.data.hasOwnProperty('bind') && typeof attributes.data.bind !== 'undefined') {
+								if (typeof entities !== 'undefined') {
+									setEntityValidations(attributes.data);
+								}
+							}
+						}
+						
+						if (current.validation.hasOwnProperty('messages') || current.validation.hasOwnProperty('rules')) {
+							if (current.validation.hasOwnProperty('messages') && typeof current.validation.messages !== 'undefined') {
+								$.each(current.validation.messages, function (rule, message) {
+									validationAttributes['data-' + rule + '-msg'] = message;
+								});
+							}
+							
+							if (current.validation.hasOwnProperty('rules') && typeof current.validation.rules !== 'undefined') {
+								var constraintType = 'undefined';
+								
+								$.each(current.validation.rules, function (rule, constraint) {
+									constraintType = typeof constraint;
+									
+									// TODO: Implement functionality to define custom rules
+									if (constraintType === 'string' || constraintType === 'number' || constraintType === 'boolean') {
+										validationAttributes[rule] = constraint;
+									}
+								});
+							}
+						}
+						
+						if (typeof attributes === 'undefined') {
+							attributes = {};
+						}
+						
+						$.extend(true, attributes, validationAttributes);
+					}
+				},
+				// Questions?
+				// 1. Has a value binding been set? Automatic entity binding should *not* work unless a value has been defined
+				// 2. Has a widget role been defined?
+				setEntityValidations: function (bindings) {
+					var info,
+						entityMetadata,
+						fieldMetadata,
+						metadataConfig = App.Config.Metadata,
+						arrayRegex = /(?:^.*?)(\[\d+\])/;
+						
+					info = {
+						entity: null, // Get from binding
+						fieldName: null, // Get from binding
+						bindPath: null, // Get from binding
+						role: null
+					};
+					var bindPath,
+						chunkIndex,
+						currentChunk;
+					
+					for (var prop in bindings) {
+						switch (prop) {
+							case 'role':
+								info.role = bindings.role;
+								break;
+								
+							case 'bind':
+								// Empty data attributes will crash Kendo
+								if (App.Helpers.isEmpty(bindings.bind) === false) {
+									// TODO: Could be using strategy pattern to process data attributes
+									if (typeof bindings.bind === 'string') {
+										if (typeof bindings.bind === 'string' && bindings.bind !== '' && bindings.bind !== null) {
+											chunkIndex = null; // Reset the match index
+											// TODO: Throw an error if null
+											bindPath = bindings.bind.split('.'); // Split by namespace
 											
-										case 'bind':
-											// Empty data attributes will crash Kendo
-											if (App.Helpers.isEmpty(bindings.bind) === false) {
-												// TODO: Could be using strategy pattern to process data attributes
-												if (typeof bindings.bind === 'string') {
-													if (typeof bindings.bind === 'string' && bindings.bind !== '' && bindings.bind !== null) {
+											if (App.getConfig('debug') === true) {
+												App.log('bind path');
+												App.log(bindPath);
+											}
+
+											// TODO: Make this recursive so we can support multiple levels of nesting
+											if (bindPath.length > 1) {
+												currentChunk = bindPath.shift();
+												matches = arrayRegex.exec(bindings.bind);
+												currentChunk = matches.shift();
+
+												// We only care about the first match
+												chunkIndex = matches[0].replace('[', '').replace(']', ''); // Strip brackets
+												chunkIndex = parseInt(chunkIndex);
+
+												// Get the name of the current chunk of the binding path
+												currentChunk = currentChunk.replace('[' + chunkIndex.toString() + ']', '')
+
+												if (currentChunk !== '' && chunkIndex !== null) {
+													//that._viewModel.set(currentChunk, new kendo.data.ObservableArray([]));
+													//oa = that._viewModel.get(currentChunk);
+													//oa.push(new kendo.data.ObservableObject());
+												}
+											} else {
+												currentChunk = bindPath.shift();
+												
+												// Primary entity
+												entityMetadata = entities.get(primary);
+												
+												if (typeof entityMetadata !== 'undefined' && entityMetadata.has(currentChunk)) {
+													// Attach validations and override
+													fieldMetadata = entityMetadata.get(currentChunk);
+													
+													// Set validation
+													if (current.hasOwnProperty('validation')) {
+														current.validation = metadataConfig.mapValidations(fieldMetadata, current.validation);
+													}
+												}
+											}
+										}				
+									} else {
+										$.each(bindings.bind, function (type, binding) {
+											switch (type) {
+												case 'value':
+													// Set nested bindings
+													if (typeof binding === 'string' && binding !== '' && binding !== null) {
 														chunkIndex = null; // Reset the match index
 														// TODO: Throw an error if null
-														bindPath = bindings.bind.split('.'); // Split by namespace
-														
-														if (App.getConfig('debug') === true) {
-															App.log('bind path');
-															App.log(bindPath);
-														}
+														bindPath = binding.split('.'); // Split by namespace
+														//App.log('bind path');
+														//App.log(bindPath);
 
 														// TODO: Make this recursive so we can support multiple levels of nesting
 														if (bindPath.length > 1) {
 															currentChunk = bindPath.shift();
-															matches = arrayRegex.exec(bindings.bind);
+															matches = arrayRegex.exec(binding);
 															currentChunk = matches.shift();
 
 															// We only care about the first match
@@ -5195,229 +5355,73 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 																}
 															}
 														}
-													}				
-												} else {
-													$.each(bindings.bind, function (type, binding) {
-														switch (type) {
-															case 'value':
-																// Set nested bindings
-																if (typeof binding === 'string' && binding !== '' && binding !== null) {
-																	chunkIndex = null; // Reset the match index
-																	// TODO: Throw an error if null
-																	bindPath = binding.split('.'); // Split by namespace
-																	//App.log('bind path');
-																	//App.log(bindPath);
-
-																	// TODO: Make this recursive so we can support multiple levels of nesting
-																	if (bindPath.length > 1) {
-																		currentChunk = bindPath.shift();
-																		matches = arrayRegex.exec(binding);
-																		currentChunk = matches.shift();
-
-																		// We only care about the first match
-																		chunkIndex = matches[0].replace('[', '').replace(']', ''); // Strip brackets
-																		chunkIndex = parseInt(chunkIndex);
-
-																		// Get the name of the current chunk of the binding path
-																		currentChunk = currentChunk.replace('[' + chunkIndex.toString() + ']', '')
-
-																		if (currentChunk !== '' && chunkIndex !== null) {
-																			//that._viewModel.set(currentChunk, new kendo.data.ObservableArray([]));
-																			//oa = that._viewModel.get(currentChunk);
-																			//oa.push(new kendo.data.ObservableObject());
-																		}
-																	} else {
-																		currentChunk = bindPath.shift();
-																		
-																		// Primary entity
-																		entityMetadata = entities.get(primary);
-																		
-																		if (typeof entityMetadata !== 'undefined' && entityMetadata.has(currentChunk)) {
-																			// Attach validations and override
-																			fieldMetadata = entityMetadata.get(currentChunk);
-																			
-																			// Set validation
-																			if (current.hasOwnProperty('validation')) {
-																				current.validation = metadataConfig.mapValidations(fieldMetadata, current.validation);
-																			}
-																		}
-																	}
-																}
-																break;
-																
-															default:
-																break;
-														}
-													});
-												}
-											}
-											break;
-											
-										default:
-											break;
-									}
-								}
-								
-								return info;
-							};
-							
-							var setShorthandValidations = function (shortHandValidations) {
-								// Reformat shorthand validations
-								var validations = {};
-								
-								if (shortHandValidations.hasOwnProperty('message') && shortHandValidations.message !== '') {
-									validationAttributes['validationMessage'] = shortHandValidations.message;
-									
-									delete shortHandValidations.message;
-								}
-								
-								validations.rules = {};
-								
-								$.each(shortHandValidations, function (key, value) {
-									if (attributes.length > 0) {
-										if (attributes.indexOf(key) !== -1) {
-											validations.rules[key] = value;
-										}
-									} else {
-										validations.rules[key] = value;
-									}
-								});
-								
-								current.validation = validations;
-							};
-							
-							if (current.hasOwnProperty('validation')) {
-								if (!current.validation.hasOwnProperty('messages') && !current.validation.hasOwnProperty('rules')) {
-									setShorthandValidations(current.validation);
-								}
-								
-								if (attributes.hasOwnProperty('data') && typeof attributes.data !== 'undefined') {
-									if (attributes.data.hasOwnProperty('bind') && typeof attributes.data.bind !== 'undefined') {
-										if (typeof entities !== 'undefined') {
-											setEntityValidations(attributes.data);
-										}
-									}
-								}
-								
-								if (current.validation.hasOwnProperty('messages') || current.validation.hasOwnProperty('rules')) {
-									if (current.validation.hasOwnProperty('messages') && typeof current.validation.messages !== 'undefined') {
-										$.each(current.validation.messages, function (rule, message) {
-											validationAttributes['data-' + rule + '-msg'] = message;
-										});
-									}
-									
-									if (current.validation.hasOwnProperty('rules') && typeof current.validation.rules !== 'undefined') {
-										var constraintType = 'undefined';
-										
-										$.each(current.validation.rules, function (rule, constraint) {
-											constraintType = typeof constraint;
-											
-											// TODO: Implement functionality to define custom rules
-											if (constraintType === 'string' || constraintType === 'number' || constraintType === 'boolean') {
-												validationAttributes[rule] = constraint;
+													}
+													break;
+													
+												default:
+													break;
 											}
 										});
 									}
 								}
+								break;
 								
-								if (typeof attributes === 'undefined') {
-									attributes = {};
-								}
-								
-								$.extend(true, attributes, validationAttributes);
-							}
-							
-							if (isFirst === true) {
-								builder.append(current.tag, attributes);
-								
-								isFirst = false;
-							} else {
-								builder.add(current.tag, attributes);
-							}
-							
-							// MOVE: To Metadata Validation WI
-							// TODO: Refactor this into a kPaged plugin - which also involves adding plugin functionality!
-							var validation;
-							
-							if (current.hasOwnProperty('validation')) {
-								builder.setAttributes(builder.getCurrent(), validationAttributes);
-								validationAttributes = {};
-								
-								validation = builder.addAfter(builder.getCurrent(), 'span', {
-									class: 'k-invalid-msg',
-									data: {
-										for: builder.getCurrent().id
-									}
-								});
-							}
-							
-							if (attributes.hasOwnProperty('data') && attributes.data.hasOwnProperty('role')) {
-								if (attributes.data.role === 'semantictabstrip' && current.hasOwnProperty('tabs')) {
-									App.Widgets.Helpers.SemanticTabStrip.build(builder, current.tabs);
-								}
-								
-								if (attributes.data.role === 'panelbar' || attributes.data.role === 'eventpanelbar') {
-									if (current.data.hasOwnProperty('items')) {
-										App.Widgets.Helpers.PanelBar.build(builder, current.data.items);
-									}
-								}
-							}
-							
-							// Prepend title
-							if (current.hasOwnProperty('title')) {
-								var title = builder.addBefore(builder.getCurrent(), 'h1', { 'class': 'title-prefix' });
-								builder.text(title, current.title);
-							}
-							
-							// Prepend legend
-							if (current.hasOwnProperty('legend')) {
-								// TODO: I need to add a prepend method
-								var legend = builder.appendNode(builder.getCurrent(), 'legend');
-								builder.text(legend, current.legend);
-							}
-							
-							// Prepend label
-							if (current.hasOwnProperty('label')) {
-								var label = builder.addBefore(builder.getCurrent(), 'label', {
-									for: builder.getCurrent().id
-								});
-								builder.text(label, current.label);
-							}
-							
-							// Append text
-							if (current.hasOwnProperty('text')) {
-								builder.text(builder.getCurrent(), current.text);
-							}
-							
-							// Clear attributes or stuff will bomb!
-							attributes = {};
-							
-							// END TODO
+							default:
+								break;
 						}
-						
-						// Are there child nodes? If so, recurse...
-						if (iterator.hasChildren()) {
-							children = iterator.getChildren();							
-							
-							if (maxNesting === false) {				
-								// Recurse
-								level = (isDOMElement) ? level + 1 : level;
-								that.build(children, level);
-							}
-						}
-						
-						// Reset variables for reuse
-						block = false;
-						module = false;
-						
-						// Move to the next node
-						iterator.next();
-					} while (iterator.hasNext());
+					}
 					
-					if (isDOMElement || isBlock || isModule) {
-						if (iterator.hasNext() === false) {
-							builder.parent();
+					return info;
+				},
+				setShorthandValidations: function (shorthandValidations, current) {
+					// Reformat shorthand validations
+					var validations = {};
+					
+					if (shorthandValidations.hasOwnProperty('message') && shorthandValidations.message !== '') {
+						validationAttributes['validationMessage'] = shorthandValidations.message;
+						
+						delete shorthandValidations.message;
+					}
+					
+					validations.rules = {};
+					
+					$.each(shorthandValidations, function (key, value) {
+						if (attributes.length > 0) {
+							if (attributes.indexOf(key) !== -1) {
+								validations.rules[key] = value;
+							}
+						} else {
+							validations.rules[key] = value;
 						}
+					});
+					
+					current.validation = validations;
+				},
+				applyShortcuts: function (builder, current) {
+					// Prepend title
+					if (current.hasOwnProperty('title')) {
+						var title = builder.addBefore(builder.getCurrent(), 'h1', { 'class': 'title-prefix' });
+						builder.text(title, current.title);
+					}
+					
+					// Prepend legend
+					if (current.hasOwnProperty('legend')) {
+						// TODO: I need to add a prepend method
+						var legend = builder.appendNode(builder.getCurrent(), 'legend');
+						builder.text(legend, current.legend);
+					}
+					
+					// Prepend label
+					if (current.hasOwnProperty('label')) {
+						var label = builder.addBefore(builder.getCurrent(), 'label', {
+							for: builder.getCurrent().id
+						});
+						builder.text(label, current.label);
+					}
+					
+					// Append text
+					if (current.hasOwnProperty('text')) {
+						builder.text(builder.getCurrent(), current.text);
 					}
 				},
 				getDocument: function () {
@@ -5867,8 +5871,15 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 													break;
 													
 												case 'bind':
-													// Bind the DOM element to the View-Model
-													that.getBinder().bindNode(node, value.bind);
+													if (App.getConfig('profile') !== false) {
+														//console.profile('Profiling binding for node: { id: ' + node.id + ', name: ' + node.name + '} | binding: ' + JSON.stringify(value.template));
+														that.getBinder().bindNode(node, value.bind);
+														//console.profileEnd();
+													} else {
+														// Bind the DOM element to the View-Model
+														that.getBinder().bindNode(node, value.bind);
+													}
+													
 													break;
 													
 												case 'items':
@@ -5878,7 +5889,14 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 												case 'template':
 													// TODO: WTF template is hardcoded - sucky!
 													// Don't use Kendo's declarative binding syntax for templates! Use App.Loader, or template binding will fail miserably
-													App.load('template', App.getConfig('templateUrl') + value.template.source, { id: node.id, template: value.template.id });
+													if (App.getConfig('profile') !== false) {
+														//console.profile('Profiling template loading for node: { id: ' + node.id + ', name: ' + node.name + '} | binding: ' + JSON.stringify(value.template));
+														App.load('template', App.getConfig('templateUrl') + value.template.source, { id: node.id, template: value.template.id });
+														//console.profileEnd();
+													} else {
+														App.load('template', App.getConfig('templateUrl') + value.template.source, { id: node.id, template: value.template.id });
+													}
+													
 													node.setAttribute('data-' + App.Helpers.String.hyphenize(prop), value.template.id);
 													break;
 													
@@ -6252,6 +6270,11 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						viewModel = this._viewModel;
 					}
 					
+					if (App.getConfig('debug') === true) {
+						App.log('Attempting to bind selector "' + selector + '" to ' + ((bindInjected) ? 'supplied ' : '') + 'view-model:');
+						App.log(viewModel);
+					}
+					
 					if (block.autoBind && block.dataBound === false) {
 						viewModel.set('_block', block);
 						viewModel.set('_page', page);
@@ -6273,8 +6296,13 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 							
 							this._viewModel = viewModel;
 							
-							kendo.unbind($('#' + viewModel.get('_block').getId()));
-							kendo.bind($('#' + viewModel.get('_block').getId()), viewModel);
+							// TODO: Fix this
+							if (viewModel.get('_block')) {
+								kendo.unbind($('#' + viewModel.get('_block').getId()));
+								kendo.bind($('#' + viewModel.get('_block').getId()), viewModel);
+							} else {
+								App.log('The supplied view-model does not contain a block reference');
+							}
 						}
 						
 						block.dataBound = true;
