@@ -358,7 +358,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 	 **********************************************************/
 	// This construct can be improved - should ideally be self-executing
 	var App = window.App = window.App || {
-		_config: {},
+		_config: null,
 		_errorHandler: {},
 		_eventHandler: {},
 		_events: {},
@@ -375,7 +375,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 				router;
 			
 			// Initialize and register the config hash
-			this._config = Object.create(App.Utilities.ChainableHash(), {});
+			this._config = this._config || Object.create(App.Utilities.ChainableHash(), {});
 			
 			// Initialize an empty hash to store pages and set it to config
 			this._config.set('pages', Object.create(App.Utilities.ChainableHash(), {}));
@@ -505,15 +505,12 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 				});
 			});
 		},
-		getRootWebsitePath: function () {
-			var protocol = (protocol === false) ? false : true,
-				_location = document.location.toString(),
-				applicationNameIndex = _location.indexOf('/', _location.indexOf('://') + 3),
-				applicationName = _location.substring(0, applicationNameIndex) + '/',
-				webFolderIndex = _location.indexOf('/', _location.indexOf(applicationName) + applicationName.length),
-				webFolderFullPath = _location.substring(0, webFolderIndex);
-
-			return (protocol === false) ? location.pathname : webFolderFullPath;
+		// TODO: Implement protocol
+		getRootWebsitePath: function (trailing, protocol) {
+			var path = requirejs.s.contexts._.config.baseUrl;
+			trailing = (trailing === true) ? true : false;
+			
+			return (trailing) ? path : path.replace(/\/$/, '');
 		},
 		getPrimaryBlockName: function () {
 			var page = App.getCurrent();
@@ -2379,6 +2376,24 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 	 * Namespace: App.Helpers.String
 	 **********************************************************/
 	App.Helpers.String = App.Helpers.String || {
+		decodeHtmlEntities: function (str) {
+			var element = document.createElement('div');
+			
+			function decode (str) {
+				if (str && typeof str === 'string') {
+					// Strip script/html tags
+					str = str.replace(/<script[^>]*>([\S\s]*?)<\/script>/gmi, '');
+					str = str.replace(/<\/?\w(?:[^"'>]|"[^"]*"|'[^']*')*>/gmi, '');
+					element.innerHTML = str;
+					str = element.textContent;
+					element.textContent = '';
+				}
+				
+				return str;
+			}
+			
+			return decode(str);
+		},
 		/**
 		 * Method: App.Helpers.String.hyphenize
 		 *
@@ -2397,15 +2412,20 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 				return str.toUpperCase().replace('-', ''); 
 			});
 		},
-		swapSubstrings: function (string, sub1, sub2) {
-			string = string.replace(new RegExp('(' + sub1 + '|' + sub2 + ')', 'g'), function (match) {
+		swapSubstrings: function (str, sub1, sub2) {
+			str = str.replace(new RegExp('(' + sub1 + '|' + sub2 + ')', 'g'), function (match) {
 				return match === sub1 ? sub2 : sub1;
 			});
 			
 			return string;
 		},
-		escapeRegExp: function (string) {
-		  return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+		escapeRegExp: function (str) {
+		  return str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+		},
+		shortenText: function (str, maxLength) {
+			maxLength = maxLength || str.length;
+			var trimmed = str.substr(0, maxLength);
+			return trimmed.substr(0, Math.min(trimmed.length, trimmed.lastIndexOf(' ')));
 		}
 	};
 	
@@ -6272,7 +6292,6 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					
 					if (App.getConfig('debug') === true) {
 						App.log('Attempting to bind selector "' + selector + '" to ' + ((bindInjected) ? 'supplied ' : '') + 'view-model:');
-						App.log(viewModel);
 					}
 					
 					if (block.autoBind && block.dataBound === false) {
@@ -6310,6 +6329,10 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						// TODO: Nested block binding still isn't working right in modules
 						kendo.bind($(selector), viewModel);
 						block.dataBound = true;
+					}
+					
+					if (App.getConfig('debug') === true) {
+						App.log(viewModel);
 					}
                     
 					//selector = selector || 'body';

@@ -95,7 +95,7 @@ define({
 							label: 'First Name',
 							tag: 'input',
 							type: 'text',
-							class: 'medium',
+							class: 'medium k-textbox',
 							data: {
 								bind: 'firstName'
 							}
@@ -110,7 +110,7 @@ define({
 							label: 'Middle Name',
 							tag: 'input',
 							type: 'text',
-							class: 'medium',
+							class: 'medium k-textbox',
 							data: {
 								bind: 'middleName'
 							}
@@ -125,7 +125,7 @@ define({
 							label: 'Last Name',
 							tag: 'input',
 							type: 'text',
-							class: 'medium',
+							class: 'medium k-textbox',
 							data: {
 								bind: 'lastName'
 							}
@@ -342,23 +342,18 @@ define({
 							label: 'Email',
 							tag: 'input',
 							type: 'text',
+							class: 'medium k-textbox',
 							data: {
 								bind: 'emailAddress'
 							}
-						}
-					]
-				}
-			},
-			{
-				block: 'autorow',
-				config: {
-					items: [
+						},
 						{
 							id: 'personalWebPage',
 							name: 'personalWebPage',
 							label: 'Web Page',
 							tag: 'input',
 							type: 'text',
+							class: 'medium k-textbox',
 							data: {
 								bind: 'webPage'
 							}

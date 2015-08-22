@@ -30,7 +30,7 @@ define({
 							label: 'Company Name',
 							tag: 'input',
 							type: 'text',
-							class: 'medium',
+							class: 'medium k-textbox',
 							data: {
 								bind: 'lastName'
 							}
@@ -41,26 +41,9 @@ define({
 							label: 'Contact Person',
 							tag: 'input',
 							type: 'text',
-							class: 'medium',
+							class: 'medium k-textbox',
 							data: {
 								bind: 'contactPerson'
-							}
-						}
-					]
-				}
-			},
-			{
-				block: 'autorow',
-				config: {
-					items: [
-						{
-							id: 'companyWebPage',
-							name: 'companyWebPage',
-							label: 'Web Page',
-							tag: 'input',
-							type: 'text',
-							data: {
-								bind: 'webPage'
 							}
 						}
 					]
@@ -76,8 +59,20 @@ define({
 							label: 'Email',
 							tag: 'input',
 							type: 'text',
+							class: 'medium k-textbox',
 							data: {
 								bind: 'emailAddress'
+							}
+						},
+						{
+							id: 'companyWebPage',
+							name: 'companyWebPage',
+							label: 'Web Page',
+							tag: 'input',
+							type: 'text',
+							class: 'medium k-textbox',
+							data: {
+								bind: 'webPage'
 							}
 						}
 					]

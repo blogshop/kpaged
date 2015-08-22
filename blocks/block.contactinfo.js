@@ -30,7 +30,7 @@ define({
 							label: 'Home',
 							tag: 'input',
 							type: 'number',
-							class: 'medium',
+							class: 'medium k-textbox',
 							data: {
 								bind: 'homePhone'
 							},
@@ -44,7 +44,7 @@ define({
 							label: 'ext.',
 							tag: 'input',
 							type: 'text',
-							class: 'small',
+							class: 'small k-textbox',
 							data: {
 								bind: 'homePhoneExtension'
 							}
@@ -62,7 +62,7 @@ define({
 							label: 'Work/Business',
 							tag: 'input',
 							type: 'text',
-							class: 'medium',
+							class: 'medium k-textbox',
 							data: {
 								bind: 'businessPhone'
 							}
@@ -73,7 +73,7 @@ define({
 							label: 'ext.',
 							tag: 'input',
 							type: 'text',
-							class: 'small',
+							class: 'small k-textbox',
 							data: {
 								bind: 'businessPhoneExtension'
 							}
@@ -91,7 +91,7 @@ define({
 							label: 'Cell',
 							tag: 'input',
 							type: 'text',
-							class: 'medium',
+							class: 'medium k-textbox',
 							data: {
 								bind: 'cellPhone'
 							}
@@ -109,7 +109,7 @@ define({
 							label: 'Fax',
 							tag: 'input',
 							type: 'text',
-							class: 'medium',
+							class: 'medium k-textbox',
 							data: {
 								bind: 'faxNumber'
 							}

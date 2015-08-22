@@ -519,7 +519,7 @@ define({
 														label: 'Apt/Suite #',
 														tag: 'input',
 														type: 'text',
-														class: 'tiny',
+														class: 'tiny k-textbox',
 														data: {
 															bind: {
 																value: 'Addresses[0].suiteNumber',
@@ -547,7 +547,7 @@ define({
 														label: 'Street #',
 														tag: 'input',
 														type: 'text',
-														class: 'small',
+														class: 'small k-textbox',
 														data: {
 															bind: {
 																value: 'Addresses[0].streetNumber',
@@ -575,7 +575,7 @@ define({
 														label: 'Street Name',
 														tag: 'input',
 														type: 'text',
-														class: 'medium',
+														class: 'medium k-textbox',
 														data: {
 															bind: {
 																value: 'Addresses[0].streetName',
@@ -603,7 +603,7 @@ define({
 														label: 'Street Type',
 														tag: 'input',
 														type: 'text',
-														class: 'small',
+														class: 'small k-textbox',
 														data: {
 															bind: {
 																value: 'Addresses[0].streetType',
@@ -676,7 +676,7 @@ define({
 														label: 'P.O. Box',
 														tag: 'input',
 														type: 'text',
-														class: 'small',
+														class: 'small k-textbox',
 														data: {
 															bind: {
 																value: 'Addresses[0].poBox',
@@ -717,7 +717,7 @@ define({
 														label: 'RR',
 														tag: 'input',
 														type: 'text',
-														class: 'small',
+														class: 'small k-textbox',
 														data: {
 															bind: {
 																value: 'Addresses[0].rr',
@@ -745,7 +745,7 @@ define({
 														label: 'Site',
 														tag: 'input',
 														type: 'text',
-														class: 'small',
+														class: 'small k-textbox',
 														data: {
 															bind: {
 																value: 'Addresses[0].site',
@@ -773,7 +773,7 @@ define({
 														label: 'Comp',
 														tag: 'input',
 														type: 'text',
-														class: 'small',
+														class: 'small k-textbox',
 														data: {
 															bind: {
 																value: 'Addresses[0].comp',
@@ -801,7 +801,7 @@ define({
 														label: 'Box',
 														tag: 'input',
 														type: 'text',
-														class: 'small',
+														class: 'small k-textbox',
 														data: {
 															bind: {
 																value: 'Addresses[0].box',
@@ -829,7 +829,7 @@ define({
 														label: 'Lot #',
 														tag: 'input',
 														type: 'text',
-														class: 'small',
+														class: 'small k-textbox',
 														data: {
 															bind: {
 																value: 'Addresses[0].lotNumber',
@@ -857,7 +857,7 @@ define({
 														label: 'Concession #',
 														tag: 'input',
 														type: 'text',
-														class: 'small',
+														class: 'small k-textbox',
 														data: {
 															bind: {
 																value: 'Addresses[0].concessionNumber',
@@ -895,7 +895,7 @@ define({
 										label: 'Station',
 										tag: 'input',
 										type: 'text',
-										class: 'small',
+										class: 'small k-textbox',
 										data: {
 											bind: {
 												value: 'Addresses[0].station',
@@ -923,7 +923,7 @@ define({
 										label: 'City',
 										tag: 'input',
 										type: 'text',
-										class: 'medium',
+										class: 'medium k-textbox',
 										data: {
 											bind: {
 												value: 'Addresses[0].city',
@@ -1000,7 +1000,7 @@ define({
 										label: 'Postal Code',
 										tag: 'input',
 										type: 'text',
-										class: 'small',
+										class: 'small k-textbox',
 										data: {
 											bind: {
 												value: 'Addresses[0].postalCode',
