@@ -1,7 +1,7 @@
 define({
     name: 'autorow',
 	id: 'autorow',
-	autoRender: false,
+	autoRender: true,
 	autoBind: false,
 	/**
 	 * Override the default setBlocks function

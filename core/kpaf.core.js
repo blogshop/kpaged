@@ -3051,6 +3051,12 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 				configurable: false,
 				writable: true
 			},
+			_dataSources: {
+				value: {},
+				enumerable: true,
+				configurable: false,
+				writable: true
+			},
 			// Stores data
 			_formData: {
 				value: {},
@@ -3119,8 +3125,11 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					// Initialize hash for storing block instances
 					that._blocks = Object.create(App.Utilities.ChainableHash(), {});
 					
-					// Initialize hash for storing block instances
+					// Initialize hash for storing entity instances
 					that._entities = Object.create(App.Utilities.ChainableHash(), {});
+					
+					// Initialize hash for storing datasource instances
+					that._dataSources = Object.create(App.Utilities.ChainableHash(), {});
 					
 					// MOVE: To Metadata Validation WI
 					// TODO: Refactor this into a kPaged plugin - which also involves adding plugin functionality!
@@ -3235,34 +3244,37 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 								that._blocks.set(block.getId(), block);
 								
 								// Append rendered top-level blocks to the DOM
-								children = document.getElementById(block.getId()).childNodes;
-								$.each(children, function (idx, domNode) {
-									if (domNode.nodeType === 1 && domNode.className === 'pane-content') {
-										domNode.innerHTML = '';
-										domNode.appendChild(block.html());
-										return;
-									}
-								});
-								
-								block.dataBind();
-								
-								that._blocks.each(function (name, instance) {
-									if (instance.autoBind === false && instance.dataBound === false) {										
-										instance.dataBind(block.getViewModel());
-									}
-								});
-								
-								
-								// Data-bind module instances to their respective layouts
-								that._modules.each(function (name, instance) {
-									// TODO: Nested block binding still isn't working right in modules
-									// TODO: Confirm... there have been changes
-									if (instance.autoBind === false && instance.dataBound === false) {										
-										instance.dataBind(block.getViewModel());
-									} else {
-										instance.dataBind();
-									}
-								});
+								var blockElement = document.getElementById(block.getId());
+								if (blockElement) {
+									children = blockElement.childNodes;
+									$.each(children, function (idx, domNode) {
+										if (domNode.nodeType === 1 && domNode.className === 'pane-content') {
+											domNode.innerHTML = '';
+											domNode.appendChild(block.html());
+											return;
+										}
+									});
+									
+									block.dataBind();
+									
+									that._blocks.each(function (name, instance) {
+										if (instance.autoBind === false && instance.dataBound === false) {										
+											instance.dataBind(block.getViewModel());
+										}
+									});
+									
+									
+									// Data-bind module instances to their respective layouts
+									that._modules.each(function (name, instance) {
+										// TODO: Nested block binding still isn't working right in modules
+										// TODO: Confirm... there have been changes
+										if (instance.autoBind === false && instance.dataBound === false) {										
+											instance.dataBind(block.getViewModel());
+										} else {
+											instance.dataBind();
+										}
+									});
+								}
 							
 							} else {
 								if (App.getConfig('debug') === true) {
@@ -3421,6 +3433,14 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 			getFormData: {
 				value: function () {
 					return this._formData;
+				},
+				enumerable: true,
+				configurable: false,
+				writable: true
+			},
+			getDataSources: {
+				value: function () {
+					return this._dataSources;
 				},
 				enumerable: true,
 				configurable: false,
@@ -3659,6 +3679,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 							
 							event = eventHandler.getEvent('loaded');
 							event.dispatch();
+							console.log('loaded event done');
 						}
 
 						// Get the view-model
@@ -3691,10 +3712,13 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					}
 					
 					modules = App.getCurrent().getModules();
-					console.log('MODULES');
-					console.log(modules);
 					if (modules !== 'undefined') {
 						modules.each(function (moduleName, module) {
+							if (module.autoRender === true) {
+								module.render();
+								//$('#' + module.getId()).replaceWith(module.html());
+							}
+							
 							moduleEventHandler = module.getEventHandler();
 							if (moduleEventHandler.hasEvent('pageLoaded')) {
 								event = moduleEventHandler.getEvent('pageLoaded');
@@ -4040,13 +4064,13 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 				autoRender:  {
 					value: true,
 					enumerable: true,
-					configurable: false,
+					configurable: true,
 					writable: true
 				},
 				autoBind:  {
 					value: true,
 					enumerable: true,
-					configurable: false,
+					configurable: true,
 					writable: true
 				},
 				dataBound:  {
@@ -4062,6 +4086,12 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						
 						page = page || '';
 						config = config || '';
+						
+						if (config) {
+							// The autoRender parameter specifies whether or not the parent BlockDirector should render the module as part of the page rendering process
+							that.autoRender = (config.hasOwnProperty('autoRender')) ? config.autoRender : that.autoRender;
+							that.autoBind = (config.hasOwnProperty('autoRender')) ? config.autoRender : that.autoBind;
+						}
 						
 						if (page !== '') {
 							that._page = page;
@@ -4081,9 +4111,6 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						
 						that._id = config.id;
 						that._config = config;
-						
-						that.autoRender = config.autoRender || that.autoRender;
-						that.autoBind = (config.autoBind === false) ? false : that.autoBind;
 						
 						if (App.getConfig('debug') === true) {
 							App.log('Initializing block [' + config.id + ']');
@@ -4105,6 +4132,10 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						
 						// Auto-render
 						if (that.autoRender === true) {
+							if (App.getConfig('debug') === true) {
+								App.log('Rendering block [' + config.id + ']');
+							}
+							
 							that.render();
 						}
 						
@@ -4200,6 +4231,16 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					enumerable: true,
 					configurable: false,
 					writable: true
+				},
+				isRendered: {
+					getEventHandler: {
+						value: function () {
+							return this._rendered;
+						},
+						enumerable: true,
+						configurable: false,
+						writable: true
+					}
 				},
 				getId: {
 					value: function () {
@@ -4367,13 +4408,13 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 				autoRender:  {
 					value: false,
 					enumerable: true,
-					configurable: false,
+					configurable: true,
 					writable: true
 				},
 				autoBind:  {
 					value: true,
 					enumerable: true,
-					configurable: false,
+					configurable: true,
 					writable: true
 				},
 				dataBound:  {
@@ -4395,8 +4436,9 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						config = config || '';
 						
 						if (config) {
-							that.autoRender = config.autoRender || that.autoRender;
-							that.autoBind = (config.autoBind === false) ? false : that.autoBind;
+							// The autoRender parameter specifies whether or not the parent BlockDirector should render the module as part of the page rendering process
+							that.autoRender = (config.hasOwnProperty('autoRender')) ? config.autoRender : that.autoRender;
+							that.autoBind = (config.hasOwnProperty('autoRender')) ? config.autoRender : that.autoBind;
 						}
 						
 						if (page !== '') {
@@ -4419,16 +4461,11 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						that._config = config;
 						that._links = config.links;
 						
-						// The autoRender parameter specifies whether or not the parent BlockDirector should render the module as part of the page rendering process
-						that.autoRender = config.autoRender || that.autoRender;
-						that.autoBind = (config.autoBind === false) ? false : that.autoBind;
-						
 						if (App.getConfig('debug') === true) {
 							App.log('Initializing module [' + config.id + ']');
 							App.log('Module.init() config: ');
 							App.log(config);
-							App.log('autoBind: ' + that.autoBind);
-							App.log('autoRender: ' + that.autoRender);
+							App.log('autoBind: ' + that.autoBind + ' | autoRender: ' + that.autoRender);
 						}
 						
 						// Store a reference to the module's layout configuration
@@ -4517,17 +4554,37 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 				render: {
 					value: function () {
 						var layout = this._layout,
-							director = this._director;
+							director = this._director,
+							eventHandler = this._eventHandler,
+							el;
 						
 						director.build(layout);
 						
 						// Store content
 						this._html = director.getDocument();
 						
+						el = document.createElement('div');
+						el.appendChild(this._html);
+						
+						$('#' + this.getId()).replaceWith(el.innerHTML);
+						
+						if (eventHandler.hasEvent('rendered')) {
+							event = eventHandler.getEvent('rendered');
+							event.dispatch();
+						}
+						
 						// Set rendered flag
 						this._rendered = true;
 						
 						return this;
+					},
+					enumerable: true,
+					configurable: false,
+					writable: true
+				},
+				isRendered: {
+					value: function () {
+						return this._rendered;
 					},
 					enumerable: true,
 					configurable: false,
@@ -4593,6 +4650,14 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 				getBuilder: {
 					value: function () {
 						return this._builder;
+					},
+					enumerable: true,
+					configurable: false,
+					writable: true
+				},
+				getPage: {
+					value: function () {
+						return this._page;
 					},
 					enumerable: true,
 					configurable: false,
@@ -4830,7 +4895,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					
 					// Get the configuration 
 					if (registry && name && registry.has(name)) {
-						config = $.extend({}, registry.get(name));
+						config = (node.hasOwnProperty('config')) ? $.extend(true, {}, registry.get(name), node.config) : $.extend(true, {}, registry.get(name));
 					} else if (node.hasOwnProperty('config')) {
 						config = $.extend({}, node.config);
 					} else {
@@ -4860,6 +4925,10 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					name = (suffix !== null) ? [type, node[type], suffix].join('_') : type + '_' + node[type];
 					idRegex = new RegExp('^' + name + '_(\\d+)$');
 					
+					if (App.getConfig('debug') === true) {
+						App.log(collection.keys());
+					}
+					
 					// TODO: We need a way to determine the type of collection provided
 					$.each(collection.keys(), function (idx, id) {
 						matches = id.match(idRegex);
@@ -4882,6 +4951,8 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					if (App.getConfig('debug') === true) {
 						App.log('Assigning ' + type + ' ID: ' + config.id);
 					}
+					
+					return config.id;
 				},
 				setLayout: function (node, config) {
 					var templates = (config.layout.hasOwnProperty('templates')) ? config.layout.templates : false,
@@ -4929,6 +5000,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						iterator = Object.create(App.Utilities.RecursiveIterator(obj), {}),
 						key,
 						current,
+						uid = false,
 						page = this._page,
 						module = false, 
 						modules,
@@ -4968,7 +5040,12 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 							if (that._modules.has(current.module) && moduleConfig) {
 								registeredModules = page.getModules();
 								
-								that.generateUID('module', registeredModules, current, moduleConfig);
+								uid = that.generateUID('module', registeredModules, current, moduleConfig);
+								
+								// In blocks, we're storing a null reference so that we don't reuse the block id if we nest one inside the other
+								// Blocks are template chunks so scaffolding them is okay
+								// But in modules we need it to fail... you shouldn't be nesting a module inside itself!
+								// TODO: Implement the fail
 							}
 							
 							if (moduleConfig && moduleConfig.hasOwnProperty('layout')) {								
@@ -4985,9 +5062,12 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 							App.log('----------------------------');
 							App.log('Creating new ' + current.block + ' block');
 							
-							if (that._blocks.has(current.block) && blockConfig) {
+							if ((that._blocks.has(current.block) || blockConfig.hasOwnProperty('layout')) && blockConfig) {
 								registeredBlocks = page.getBlocks();
-								that.generateUID('block', registeredBlocks, current, blockConfig);
+								uid = that.generateUID('block', registeredBlocks, current, blockConfig);
+								
+								// Store an null reference to the block so we don't end up using the same ID twice
+								page.setBlock(uid, null);
 							}
 							
 							if (blockConfig && blockConfig.hasOwnProperty('layout')) {
@@ -4997,12 +5077,12 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 								block = (blockConfig) ? App.Page.Layout.Block(page, blockConfig) : false;
 							}
 							
-							/*if (App.getConfig('debug') === true) {
+							if (App.getConfig('debug') === true) {
 								App.log('-- block config --');
 								App.log(blockConfig);
 							}
 							
-							if (App.getConfig('debug') === true) {
+							/*if (App.getConfig('debug') === true) {
 								App.log('-- block layout --');
 								App.log(blockLayout);
 							}*/
@@ -5059,29 +5139,29 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 								module.getBuilder().setRoot(module.getLayout().tag, attributes);
 								
 								if (isFirst === true) {
-									if (module.autoRender === true) {
-										builder.append(module.render().html());
-									} else {
+									//if (module.autoRender === true) {
+										//builder.append(module.render().html());
+									//} else {
 										builder.append(module.getLayout().tag, {
 											id: module._id,
 											data: {
 												module: current.module,
 											}
 										});
-									}
+									//}
 									
 									isFirst = false;
 								} else {
-									if (module.autoRender === true) {
-										builder.add(module.render().html());
-									} else {
+									//if (module.autoRender === true) {
+										//builder.add(module.render().html());
+									//} else {
 										builder.add(module.getLayout().tag, {
 											id: module._id,
 											data: {
 												module: current.module
 											}
 										});
-									}
+									//}
 								}
 								
 								// Store the module instance
@@ -5097,11 +5177,29 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 								block.getBuilder().setRoot(block.getLayout().tag, attributes);
 								
 								if (isFirst === true) {
-									builder.append(block.render().html());
+									if (block.autoRender === true) {
+										builder.append(block.render().html());
+									} else {
+										builder.append(block.getLayout().tag, {
+											id: block._id,
+											data: {
+												block: current.block,
+											}
+										});
+									}
 									
 									isFirst = false;
 								} else {
-									builder.add(block.render().html());
+									if (block.autoRender === true) {
+										builder.add(block.render().html());
+									} else {
+										builder.add(block.getLayout().tag, {
+											id: block._id,
+											data: {
+												block: current.block
+											}
+										});
+									}
 								}
 								
 								// Store the block instance
@@ -5198,14 +5296,13 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						// Reset variables for reuse
 						block = false;
 						module = false;
+						uid = false;
 						
 						// Move to the next node
 						iterator.next();
 					} while (iterator.hasNext());
 					
 					if (isDOMElement || isBlock || isModule) {
-						console.log('has next? ' + iterator.hasNext().toString());
-						
 						if (iterator.hasNext() === false) {
 							builder.parent();
 						}
@@ -6505,6 +6602,15 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 	 * Namespace: App.Widgets.HTML
 	 **********************************************************/
 	App.Widgets.Helpers = App.Widgets.Helpers || {
+		Grid: {
+			resizeFullPane: function (grid, pane) {
+				var w, h;
+					
+				w = pane.innerWidth();
+				h = $(window).height() - grid.offset().top;
+				grid.width(w).height(h);
+			}
+		},
 		PanelBar: {
 			build: function (builder, obj, level) {
 				var that = this,

@@ -1,7 +1,7 @@
 define({
     name: 'companyInfo',
 	id: 'companyInfo',
-	autoRender: false,
+	autoRender: true,
 	autoBind: false,
 	/**
 	 * Override the default setBlocks function
@@ -44,35 +44,6 @@ define({
 							class: 'medium k-textbox',
 							data: {
 								bind: 'contactPerson'
-							}
-						}
-					]
-				}
-			},
-			{
-				block: 'autorow',
-				config: {
-					items: [
-						{
-							id: 'companyEmailAddress',
-							name: 'companyEmailAddress',
-							label: 'Email',
-							tag: 'input',
-							type: 'text',
-							class: 'medium k-textbox',
-							data: {
-								bind: 'emailAddress'
-							}
-						},
-						{
-							id: 'companyWebPage',
-							name: 'companyWebPage',
-							label: 'Web Page',
-							tag: 'input',
-							type: 'text',
-							class: 'medium k-textbox',
-							data: {
-								bind: 'webPage'
 							}
 						}
 					]

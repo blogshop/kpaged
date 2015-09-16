@@ -2,20 +2,9 @@ define({
 	name: 'address',
 	id: 'address', // This can be improved... the double ID reference isn't the greatest
 	autoBind: false, // If the autoBind parameter is set to false, the module will be bound to the Page's view-model instead of its own
-	autoRender: false,
+	autoRender: true,
 	events: {
-		pageLoaded: function (e) {
-			var	that = this,
-				page = App.getCurrent(),
-				eventHandler = that.getEventHandler();
-			
-			console.log('dispatching address "rendered" event');
-			eventHandler.dispatch('rendered');
-		},
 		rendered: function (e) {
-			this.render();
-			$('#' + this.getId()).replaceWith(this.html());
-			
 			// TODO: This is temporary until I figure out a more permanent solution
 			if ((this._viewModel instanceof kendo.data.ObservableObject) === false) {
 				this._viewModel = new kendo.data.ObservableObject();
