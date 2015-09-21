@@ -3,7 +3,7 @@
 
 /* DEFAULTS
 ----------------------------------------------------------*/
-body { font-size:0.85em; margin:0; padding:0; color:#8c8c8c; font-family: 'KozGoPro-Light-AlphaNum', 'Lucida Grande', Arial, Helvetica, Verdana, sans-serif !important; } /* TODO: Need an override yo */
+body { font-size:1.85rem !important; margin:0; padding:0; color:#8c8c8c; font-family: 'KozGoPro-Light-AlphaNum', 'Lucida Grande', Arial, Helvetica, Verdana, sans-serif !important; } /* TODO: Need an override yo */
 a:link, a:visited, a:active, a:hover { text-decoration:none; color:#000 }
 a:hover { text-decoration:underline }
 
@@ -56,10 +56,10 @@ input.small, select.small, textarea.small, .k-widget.small { font-size: inherit 
 ----------------------------------------------------------*/
 html, body, form { /*overflow:hidden*/ }
 /*.page { width:960px; background-color:#fff; margin:0 auto; padding:0 12px 12px 12px }*/
-.page { /*height:100%;*/ background-color:#fff; margin:0 auto }
+/*.page { height:100%; background-color:#fff; margin:0 auto }
 .main { margin:0; padding:0; min-height:420px }
 .container { background-color:#ffffff; border-bottom:1px solid #f2f2f2 }
-.borderless { border:0px none transparent }
+.borderless { border:0px none transparent }*/
 
 /* HEADER   
 ----------------------------------------------------------*/
@@ -159,8 +159,7 @@ fieldset legend { margin: 0 }
 
 .kpaf-row > .field, .kpaf-row > .fieldgroup { flex: none; margin: 0 12px 0 0; overflow: visible; }
 .kpaf-row > .field:last-child, .kpaf-row > .fieldgroup:last-child { margin-right: 0; }
-.kpaf-row label { display: block; font-size: 1.3rem; line-height: 0.5rem; margin-top: 0.5rem; }
-
+.kpaf-row label { display: block; font-size: 1.7rem; line-height: 1.5rem; margin-top: 1.3rem; }
 .kpaf-row > .validation { margin-top: 8px; color: red; clear: both; }
 .spacer { margin-top: 14px; }
 .novalid  { border: 1px solid red !important; }
@@ -183,6 +182,50 @@ div.spacer { margin-top: 14px; }
 }*/
 
 /* Conditionals need clearfix style applied to rows or display will suck :( */
+
+
+.listview-item {
+	-webkit-transition: all 1s ease-in-out;
+	-moz-transition: all 1s ease-in-out;
+	-o-transition: all 1s ease-in-out;
+	-ms-transition: all 1s ease-in-out;
+	width: 254px;
+	-moz-user-select: none;
+	border-radius: 10px 10px 10px 10px;
+	box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08) inset;
+	box-sizing: border-box;
+	padding: 5px;
+	margin: 5px 0 0 5px;
+	text-align: center;
+}
+
+/*.listview-item.product-option-value,*/
+.listview-item.product-option-date,
+.listview-item.product-option-scheduler {
+	width: auto;
+}
+
+.listview-item .image-container {
+	border-radius: 10px 10px 0 0;
+	display: block;
+	margin: 0 auto;
+	width: 100%;
+}
+
+.listview-item h4 {
+	border-bottom: 1px solid #F0F0F0;
+	color: #666666;
+	font-size: 1.7rem;
+	margin: 20px 3px 5px;
+	padding: 8px 10px 5px;
+}
+
+.listview-item p {
+	font-size: 1.5rem;
+	font-weight: 700;
+	margin: 10px 3px 0;
+	padding: 0 10px;
+}
 
 /* Grid */
 .k-filter-menu 
