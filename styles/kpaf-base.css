@@ -442,3 +442,21 @@ input::-webkit-outer-spin-button {
 input[type="date"]::-webkit-input-placeholder{ 
     visibility: hidden !important;
 }
+
+/*.k-icon, .k-sprite, .k-button-group .k-tool-icon {
+	background-repeat: no-repeat;
+	display: inline-block;
+	font-size: 0;
+	height: 1em;
+	line-height: 0;
+	overflow: hidden;
+	text-align: center;
+	width: 1em;
+}*/
+
+.k-panelbar .k-image, .k-panelbar .k-sprite {
+	float: left;
+	margin-right: 0.5em;
+	margin-top: 0.6em;
+	vertical-align: middle;
+}

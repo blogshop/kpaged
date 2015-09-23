@@ -67,17 +67,20 @@ define({
 								pattern: '[\+]\d{2}[\(]\d{2}[\)]\d{4}[\-]\d{4}'
 							}
 						},
-						/*{
-							id: 'homePhoneExtension',
-							name: 'homePhoneExtension',
-							label: 'ext.',
+						{
+							id: 'mobilePhone',
+							name: 'mobilePhone',
+							label: 'Mobile',
 							tag: 'input',
 							type: 'text',
-							class: 'small k-textbox',
+							class: 'medium k-textbox',
 							data: {
-								bind: 'homePhoneExtension'
+								bind: 'mobile'
+							},
+							validation: {
+								pattern: '[\+]\d{2}[\(]\d{2}[\)]\d{4}[\-]\d{4}'
 							}
-						}*/
+						}
 					]
 				}
 			},
@@ -114,17 +117,6 @@ define({
 				block: 'autorow',
 				config: {
 					items: [
-						/*{
-							id: 'cellPhone',
-							name: 'cellPhone',
-							label: 'Cell',
-							tag: 'input',
-							type: 'text',
-							class: 'medium k-textbox',
-							data: {
-								bind: 'cellPhone'
-							}
-						},*/
 						{
 							id: 'faxNumber',
 							name: 'faxNumber',

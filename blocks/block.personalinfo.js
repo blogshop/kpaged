@@ -80,7 +80,7 @@ define({
 											]
 										}
 									},
-									value: 'prefix'
+									//value: 'account_custom_field.1'
 								},
 								optionLabel: ' '
 							}
@@ -151,10 +151,13 @@ define({
 							style: 'width: 208px',
 							data: {
 								role: 'datepicker',
-								bind: 'birthDate',
+								// TODO: Fix/improve nested binding in kpaf.core line 6274
+								//bind: 'account_custom_field.2',
 								culture: 'en-CA',
-								format: 'dd/MM/yyyy',
-								parseFormats: ['yyyy-MM-dd', 'dd/MM/yyyy', 'd/MM/yyyy', 'd/M/yyyy']
+								format: 'yyyy-MM-dd',
+								parseFormats: ['yyyy-MM-dd', 'dd/MM/yyyy', 'd/MM/yyyy', 'd/M/yyyy'],
+								//format: 'dd/MM/yyyy',
+								//parseFormats: ['yyyy-MM-dd', 'dd/MM/yyyy', 'd/MM/yyyy', 'd/M/yyyy'],
 							},
 							validation: {
 								required: true,
@@ -186,7 +189,9 @@ define({
 											]
 										}
 									},
-									value: 'gender'																		
+									// TODO: I need some sort of functionality to integrate properly with OpenCart custom fields
+									// This will get the job done for now...
+									//value: 'account_custom_field.3'															
 								},
 								optionLabel: ' '
 							},

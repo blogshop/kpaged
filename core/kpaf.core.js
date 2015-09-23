@@ -3679,7 +3679,6 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 							
 							event = eventHandler.getEvent('loaded');
 							event.dispatch();
-							console.log('loaded event done');
 						}
 
 						// Get the view-model
@@ -4090,7 +4089,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						if (config) {
 							// The autoRender parameter specifies whether or not the parent BlockDirector should render the module as part of the page rendering process
 							that.autoRender = (config.hasOwnProperty('autoRender')) ? config.autoRender : that.autoRender;
-							that.autoBind = (config.hasOwnProperty('autoRender')) ? config.autoRender : that.autoBind;
+							that.autoBind = (config.hasOwnProperty('autoBind')) ? config.autoBind : that.autoBind;
 						}
 						
 						if (page !== '') {
@@ -4438,7 +4437,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						if (config) {
 							// The autoRender parameter specifies whether or not the parent BlockDirector should render the module as part of the page rendering process
 							that.autoRender = (config.hasOwnProperty('autoRender')) ? config.autoRender : that.autoRender;
-							that.autoBind = (config.hasOwnProperty('autoRender')) ? config.autoRender : that.autoBind;
+							that.autoBind = (config.hasOwnProperty('autoBind')) ? config.autoBind : that.autoBind;
 						}
 						
 						if (page !== '') {
@@ -4513,6 +4512,54 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					enumerable: true,
 					configurable: false,
 					writable: true
+				},
+				// TODO: Implement Observable/Base > Blocks > Modules inheritance...
+				// There's a lot of code duplication going on here
+				// Accepts an object or a kendo observable
+				// Blocks should be able to do this too (if autoBind is set or something?)
+				setData: {
+					value: function (data, viewModel) {
+						var isObservable = false;
+						// where does the viewmodel come from?
+						viewModel = viewModel || this._viewModel;
+						isObservable = viewModel instanceof kendo.data.ObservableObject;
+						
+						if (!isObservable) return this;
+						
+						// TODO: Cache this function
+						var setProp = function (prop) {
+							value = data[prop];
+							type = typeof value;
+
+							switch (type) {
+								case 'string':
+									value = (value.length > 0) ? value : '';
+									break;
+								case 'number':
+									value = (parseInt(value) > -1) ? value : 0;
+									break;
+								case 'boolean':
+									break;
+								default:
+									break;
+							}
+							
+							viewModel.set(prop, value);
+						};
+						
+						if (data instanceof kendo.data.Model) {
+							data.forEach(function (value, prop) {
+								setProp(prop);
+							});
+							
+						} else if (typeof data === 'object' && data !== 'undefined') {
+							for (prop in data) {
+								setProp(prop);
+							}
+						}
+						
+						return this;
+					}
 				},
 				dataBind: {
 					value: function (viewModel) {
@@ -4601,6 +4648,14 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 				getLinks: {
 					value: function () {
 						return this._links;
+					},
+					enumerable: true,
+					configurable: false,
+					writable: true
+				},
+				getConfig: {
+					value: function () {
+						return this._config;
 					},
 					enumerable: true,
 					configurable: false,
@@ -6356,6 +6411,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 										});
 										break;
 
+									// TODO: Attribute binding...
 									default:
 										val.push(type + ': ' + binding);
 										that._viewModel.set(binding, '');
