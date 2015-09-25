@@ -640,7 +640,10 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 									that.prop('type', 'text');
 								}
 								
-								that.val(kendo.toString(widget.value(), (widget.options.format || 'dd/MM/yyyy')));
+								// TODO: Need this widget is undefined error to go away... I'll look at it later
+								if (typeof widget !== 'undefined' && widget !== null) {
+									that.val(kendo.toString(widget.value(), (widget.options.format || 'dd/MM/yyyy')));
+								}
 							});
 							
 							$('input[type="date"]').each(function () {

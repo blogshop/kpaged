@@ -2,7 +2,7 @@ define({
 	name: 'address',
 	id: 'address', // This can be improved... the double ID reference isn't the greatest
 	autoBind: false, // If the autoBind parameter is set to false, the module will be bound to the Page's view-model instead of its own
-	autoRender: true,
+	autoRender: false,
 	events: {
 		rendered: function (e) {
 			// TODO: This is temporary until I figure out a more permanent solution
@@ -12,14 +12,25 @@ define({
 			
 			console.log('rendering address module [' + this._id + ']');
 			var	that = this,
-				page = App.getCurrent(),
+				moduleElement = $('#' + that.getId()),
+				page = that.getPage(),
 				block = page.getBlock('center-pane'),
 				//viewModel = block.getViewModel()
-				viewModel = this.getViewModel(),
+				viewModel = that.getViewModel(),
 				data = page.getFormData(),
 				addressEventHandler = that.getEventHandler(),
                 addressViewModel = viewModel,
 				addressValidator = block.getValidator(),
+				addressEditPopup,
+				addressLookupPopup,
+				addressEditWindow,
+				addressLookupWindow,
+				addressEditTrigger,
+				addressLookupTrigger,
+				addressDisplay,
+				overrideAddress,
+				overrideAddressReason,
+				addressReviewDate,
 				sources = {},
 				tabs,
 				tab,
@@ -28,23 +39,184 @@ define({
 				addressString = [],
 				current;
 			
-			// Window widgets append themselves by default to 
-			// <body>, even if the appendTo parameter has been
-			// specified - Kendo FAIL
+			try {
+				that.dataBind(addressViewModel);
+			} catch (e) {
+				App.log(e);
+			}
 			
-			// Bind popups
-			kendo.bind($('#addressEditPopup'), addressViewModel);
-			kendo.bind($('#addressLookupPopup'), addressViewModel);
+			// Bind popups, and set module props so they can be accessed from layout
+			that.addressEditPopup = addressEditPopup = moduleElement.find('[name=addressEditPopup]');
+			that.addressLookupPopup = addressLookupPopup = moduleElement.find('[name=addressLookupPopup]');
+			
+			kendo.bind(addressEditPopup, addressViewModel);
+			kendo.bind(addressLookupPopup, addressViewModel);
 			
 			// Bind triggers
-			kendo.bind($('#addressEditTrigger'), addressViewModel);
-			kendo.bind($('#addressLookupTrigger'), addressViewModel);
+			addressEditTrigger = moduleElement.find('[name=addressEditTrigger]').first();
+			addressLookupTrigger = moduleElement.find('[name=addressLookupTrigger]').first();
+			
+			kendo.bind(addressEditTrigger, addressViewModel);
+			kendo.bind(addressLookupTrigger, addressViewModel);
+			
+			addressEditTrigger = addressEditTrigger.data('kendoButton'); // Watch out - changing types!
+			addressLookupTrigger = addressLookupTrigger.data('kendoButton'); // Watch out - changing types!
+			
+			// Bind tabs
+			tabs = addressEditPopup.find('.address-tabs').first();
+			kendo.bind(tabs, addressViewModel);
+			
+			tabs = tabs.data('kendoSemanticTabStrip'); // Watch out - changing types!
+			
+			// Bind form buttons
+			var addressEditSelect = addressEditPopup.find('[name=addressEditSelect]').first();
+			addressEditSelect = addressEditSelect.data('kendoButton');
+			addressEditSelect.bind('click', function (e) {
+				var viewModel = addressViewModel,
+					//widget = $('[name=address-tabs]').data('kendoSemanticTabStrip'),
+					widget = tabs,
+					tab = widget.select(),
+					fields = {
+						// Civic address fields
+						civic: {
+							suiteNumber: $.trim(viewModel.get('Addresses[0].suiteNumber')),
+							streetNumber: $.trim(viewModel.get('Addresses[0].streetNumber')),
+							streetName: $.trim(viewModel.get('Addresses[0].streetName')),
+							streetType: $.trim(viewModel.get('Addresses[0].streetType')),
+							streetDirection: $.trim(viewModel.get('Addresses[0].streetDirection')),
+							poBox: (viewModel.get('Addresses[0].poBox')) ? 'PO BOX ' + $.trim(viewModel.get('Addresses[0].poBox')) : ''
+							
+						},
+						// Rural address fields
+						rural: {
+							rr: (viewModel.get('Addresses[0].rr')) ? 'RR ' + $.trim(viewModel.get('Addresses[0].rr')) : '',
+							site: (viewModel.get('Addresses[0].site')) ? 'SITE ' + $.trim(viewModel.get('Addresses[0].site')) : '',
+							comp: (viewModel.get('Addresses[0].comp')) ? 'COMP ' + $.trim(viewModel.get('Addresses[0].comp')) : '',
+							box: (viewModel.get('Addresses[0].box')) ? 'BOX ' + $.trim(viewModel.get('Addresses[0].box')) : '',
+							lotNumber: (viewModel.get('Addresses[0].lotNumber')) ? 'LOT ' + $.trim(viewModel.get('Addresses[0].lotNumber')) : '',
+							concessionNumber: (viewModel.get('Addresses[0].concessionNumber')) ? 'CONCESSION ' + $.trim(viewModel.get('Addresses[0].concessionNumber')) : ''
+						},
+						common: {
+							station: (viewModel.get('Addresses[0].station')) ? 'STN ' + $.trim(viewModel.get('Addresses[0].station')) : '',
+							city: $.trim(viewModel.get('Addresses[0].city')),
+							province: $.trim(viewModel.get('Addresses[0].province')),
+							postalCode: $.trim(viewModel.get('Addresses[0].postalCode')),
+							country: $.trim(viewModel.get('Addresses[0].country'))
+						}
+					},
+					address = [],
+					addressString = [],
+					current;
+				
+				// Create a string representation of the address fields
+				if (tab.index() === 0) {
+					// Civic address selected
+					// Clear all rural values
+					$.each(fields.rural, function (key, value) {
+						viewModel.set(key, '');
+					});
+					
+					if (fields.civic.suiteNumber !== '') {
+						address.push('{suiteNumber}-{streetNumber} {streetName} {streetType} {streetDirection}');
+					} else {
+						address.push('{streetNumber} {streetName} {streetType} {streetDirection}');
+					}
+					address.push('{poBox} {station}');
+				} else if (tab.index() === 1) {
+					// Rural address selected
+					// Clear all civic values
+					$.each(fields.civic, function (key, value) {
+						viewModel.set(key, ''); 
+					});
+					
+					if (fields.rural.lot !== '' && fields.rural.concession !== '') {
+						address.push('{lotNumber} {concessionNumber}');
+					}
+					if (fields.rural.site !== '' && fields.rural.comp !== '') {
+						address.push('{site} {comp} {box}');
+					}
+					address.push('{rr} {station}');
+				}
+				
+				// Append city/municipality, province and postal code
+				address.push('{city} {province} {postalCode}');
+
+				if(fields.common.country == "USA") {
+					address.push('{country}');
+				}
+				
+				// Replace formatting keys with form values
+				$.each(address, function (idx, format) {
+					current = format;
+					if (tab.index() === 0) {
+						$.each(fields.civic, function (key, value) {
+							current = current.replace('{' + key + '}', value);
+						});
+					} else if (tab.index() === 1) {
+						$.each(fields.rural, function (key, value) {
+							current = current.replace('{' + key + '}', value);
+						});
+					}
+					
+					$.each(fields.common, function (key, value) {
+						current = current.replace('{' + key + '}', value);
+					});
+					
+					if ($.trim(current) !== '') {
+						addressString.push($.trim(current));
+					}
+				});
+				
+				// Join address strings
+				addressString = addressString.join('\r\n');
+				
+				addressDisplay.attr('readonly', false).val(addressString).attr('readonly', true);
+				$('div[name=addressEditPopup]').data('kendoWindow').close();
+			});
+			
+			// Initialize windows from popups
+			addressEditWindow = addressEditPopup.data('kendoWindow');
+			addressLookupWindow = addressLookupPopup.data('kendoWindow');
+			
+			// We have to use name attr because initializing widgets can replace the class name
+			overrideAddress = moduleElement.find('[name=overrideAddress]').first();
+			overrideAddressReason = moduleElement.find('[name=overrideAddressReason]').first();
+			addressReviewDate = moduleElement.find('[name=addressReviewDate]').first();
+			addressDisplay = moduleElement.find('[name=addressDisplay]').first();
 			
 			// Bind preview
-			kendo.bind($('#addressDisplay'), addressViewModel);
+			kendo.bind(addressDisplay, addressViewModel);
+			
+			// TODO: This if f***ing stupid I should be able to bind from layout
+			addressEditTrigger.bind('click', function (e) {
+				var moduleElement = e.sender.element.closest('[id^=module_address_]'),
+					module = page.getModule(moduleElement.attr('id')),
+					//editWindow = module.addressEditPopup.data('kendoWindow');
+					editWindow = addressEditWindow;
+				
+				console.log(moduleElement);
+				console.log(module);
+				console.log(editWindow);
+				
+				editWindow.center().open();
+				
+			});
+			
+			addressLookupTrigger.bind('click', function (e) {
+				var moduleElement = e.sender.element.closest('[id^=module_address_]'),
+					module = page.getModule(moduleElement.attr('id')),
+					//lookupWindow = module.addressLookupPopup.data('kendoWindow');
+					lookupWindow = addressLookupWindow;
+				
+				console.log(moduleElement);
+				console.log(module);
+				console.log(lookupWindow);
+				
+				lookupWindow.center().open();
+			});
 			
 			// Set values to view-model
-			for (prop in data) {
+			/*for (prop in data) {
 				if (addressViewModel.hasOwnProperty(prop)) {
 					value = data[prop] || '';
 					
@@ -53,24 +225,23 @@ define({
 				}
 			}
 			
-			$('#overrideAddress').click(function (e) {
+			overrideAddress.click(function (e) {
 				var behavior = App.Widgets.Behaviors.OnCheckedEnableWidget(e, {
 					target: [
-						$('#addressEditTrigger').data('kendoButton'), 
-						$('#addressLookupTrigger').data('kendoButton')
+						addressEditTrigger, 
+						addressLookupTrigger
 					]
 				});
 				
 				behavior.execute();
 				
 				behavior = App.Behaviors.OnCheckedDisplayFieldGroup(e, {
-					target: $('#overrideAddressReason, #addressReviewDate')
+					target: [overrideAddressReason, addressReviewDate]
 				});
 				
 				behavior.execute();
 			});
 			
-			tabs = $('#address-tabs').data('kendoSemanticTabStrip');
 			tab = tabs.select();
 			
 			try {
@@ -163,12 +334,12 @@ define({
 			// Join address strings
 			addressString = addressString.join('\r\n');
 			
-			$('#addressDisplay').attr('readonly', false).val(addressString).attr('readonly', true);
-			$('div#addressEditPopup').data('kendoWindow').close();
+			addressDisplay.attr('readonly', false).val(addressString).attr('readonly', true);
+			addressEditWindow.close();*/
 			// Create hidden fields in the parent form (if it exists)
 			
 			try {
-				this.dataBind(addressViewModel);
+				that.dataBind(addressViewModel);
 			} catch (e) {
 				App.log(e);
 			}
@@ -346,7 +517,6 @@ define({
 							tag: 'div',
 							class: 'fieldgroup',
 							group: [{
-								id: 'addressDisplay',
 								name: 'addressDisplay',
 								tag: 'textarea',
 								label: 'Current Address',
@@ -359,7 +529,6 @@ define({
 							class: 'fieldgroup',
 							group: [
 								{
-									id: 'addressLookupTrigger',
 									name: 'addressLookupTrigger',
 									tag: 'button',
 									type: 'button',
@@ -368,17 +537,28 @@ define({
 									class: 'k-button',
 									data: {
 										role: 'button',
-										bind: {
+										// TODO: This is f***ed -- I don't know why it's not working
+										/*bind: {
 											events: {
 												click: function (e) {
-													$('#addressLookupPopup').data('kendoWindow').center().open();
+													// TODO: Make two helpers for this, getWidget/getWindow?
+													// TODO: Or better yet, make a behavior?
+													// Get the module
+													var moduleElement = e.sender.element.closest('[id^=module_address_]'),
+														module = App.getCurrent().getModule(moduleElement.attr('id')),
+														lookupWindow = module.addressLookupPopup.data('kendoWindow');
+														
+													console.log(moduleElement);
+													console.log(module);
+													console.log(lookupWindow);
+													
+													lookupWindow.center().open();
 												}
 											}
-										}
+										}*/
 									}
 								},
 								{
-									id: 'addressEditTrigger',
 									name: 'addressEditTrigger',
 									tag: 'button',
 									type: 'button',
@@ -387,13 +567,24 @@ define({
 									class: 'k-button',
 									data: {
 										role: 'button',
-										bind: {
+										// TODO: This is f***ed -- I don't know why it's not working
+										/*bind: {
 											events: {
 												click: function (e) {
-													$('#addressEditPopup').data('kendoWindow').center().open();
+													// TODO: Make two helpers for this, getWidget/getWindow?
+													// Get the module
+													var moduleElement = e.sender.element.closest('[id^=module_address_]'),
+														module = App.getCurrent().getModule(moduleElement.attr('id')),
+														editWindow = module.addressEditPopup.data('kendoWindow');
+													
+													console.log(moduleElement);
+													console.log(module);
+													console.log(editWindow);
+													
+													editWindow.center().open();
 												}
 											}
-										}
+										}*/
 									}
 								}
 							]
@@ -403,7 +594,7 @@ define({
 							class: 'fieldgroup',
 							group: [
 								{
-									id: 'overrideAddress',
+									class: 'overrideAddress',
 									name: 'overrideAddress',
 									tag: 'input',
 									type: 'checkbox',
@@ -456,11 +647,10 @@ define({
 				},
 				{
 					tag: 'div',
-					id: 'addressEditPopup',
 					name: 'addressEditPopup',
 					data: {
 						role: 'window',
-						appendTo: 'form',
+						//appendTo: 'form',
 						modal: true,
 						visible: false,
 						resizable: false,
@@ -481,9 +671,8 @@ define({
 					fieldgroups: [
 						{
 							tag: 'div',
-							id: 'address-tabs',
 							name: 'address-tabs',
-							class: 'content-box-only',
+							class: 'address-tabs',
 							data: {
 								role: 'semantictabstrip',
 								animation: false
@@ -492,7 +681,7 @@ define({
 							fieldsets: [
 								{
 									tag: 'fieldset',
-									id: 'address-civic',
+									class: 'address-civic',
 									legend: 'Civic',
 									fieldgroups: [
 										{
@@ -690,7 +879,7 @@ define({
 								},
 								{
 									tag: 'fieldset',
-									id: 'address-rural',
+									class: 'address-rural',
 									legend: 'Rural',
 									fieldgroups: [
 										{
@@ -1143,7 +1332,6 @@ define({
 							class: 'kpaf-row',
 							fields: [
 								{
-									id: 'addressEditSelect',
 									name: 'addressEditSelect',
 									tag: 'button',
 									type: 'button',
@@ -1151,112 +1339,7 @@ define({
 									text: 'Update Current Address',
 									class: 'k-button right',
 									data: {
-										role: 'button',
-										bind: {
-											events: {
-												click: function (e) {
-													var viewModel = this,
-														widget = $('#address-tabs').data('kendoSemanticTabStrip'),
-														tab = widget.select(),
-														fields = {
-															// Civic address fields
-															civic: {
-																suiteNumber: $.trim(viewModel.get('Addresses[0].suiteNumber')),
-																streetNumber: $.trim(viewModel.get('Addresses[0].streetNumber')),
-																streetName: $.trim(viewModel.get('Addresses[0].streetName')),
-																streetType: $.trim(viewModel.get('Addresses[0].streetType')),
-																streetDirection: $.trim(viewModel.get('Addresses[0].streetDirection')),
-																poBox: (viewModel.get('Addresses[0].poBox')) ? 'PO BOX ' + $.trim(viewModel.get('Addresses[0].poBox')) : ''
-																
-															},
-															// Rural address fields
-															rural: {
-																rr: (viewModel.get('Addresses[0].rr')) ? 'RR ' + $.trim(viewModel.get('Addresses[0].rr')) : '',
-																site: (viewModel.get('Addresses[0].site')) ? 'SITE ' + $.trim(viewModel.get('Addresses[0].site')) : '',
-																comp: (viewModel.get('Addresses[0].comp')) ? 'COMP ' + $.trim(viewModel.get('Addresses[0].comp')) : '',
-																box: (viewModel.get('Addresses[0].box')) ? 'BOX ' + $.trim(viewModel.get('Addresses[0].box')) : '',
-																lotNumber: (viewModel.get('Addresses[0].lotNumber')) ? 'LOT ' + $.trim(viewModel.get('Addresses[0].lotNumber')) : '',
-																concessionNumber: (viewModel.get('Addresses[0].concessionNumber')) ? 'CONCESSION ' + $.trim(viewModel.get('Addresses[0].concessionNumber')) : ''
-															},
-															common: {
-																station: (viewModel.get('Addresses[0].station')) ? 'STN ' + $.trim(viewModel.get('Addresses[0].station')) : '',
-																city: $.trim(viewModel.get('Addresses[0].city')),
-																province: $.trim(viewModel.get('Addresses[0].province')),
-																postalCode: $.trim(viewModel.get('Addresses[0].postalCode')),
-																country: $.trim(viewModel.get('Addresses[0].country'))
-															}
-														},
-														address = [],
-														addressString = [],
-														current;
-													
-													// Create a string representation of the address fields
-													if (tab.index() === 0) {
-														// Civic address selected
-														// Clear all rural values
-														$.each(fields.rural, function (key, value) {
-															viewModel.set(key, '');
-														});
-														
-														if (fields.civic.suiteNumber !== '') {
-															address.push('{suiteNumber}-{streetNumber} {streetName} {streetType} {streetDirection}');
-														} else {
-															address.push('{streetNumber} {streetName} {streetType} {streetDirection}');
-														}
-														address.push('{poBox} {station}');
-													} else if (tab.index() === 1) {
-														// Rural address selected
-														// Clear all civic values
-														$.each(fields.civic, function (key, value) {
-															viewModel.set(key, ''); 
-														});
-														
-														if (fields.rural.lot !== '' && fields.rural.concession !== '') {
-															address.push('{lotNumber} {concessionNumber}');
-														}
-														if (fields.rural.site !== '' && fields.rural.comp !== '') {
-															address.push('{site} {comp} {box}');
-														}
-														address.push('{rr} {station}');
-													}
-													
-													// Append city/municipality, province and postal code
-													address.push('{city} {province} {postalCode}');
-
-													if(fields.common.country == "USA") {
-														address.push('{country}');
-													}
-													
-													// Replace formatting keys with form values
-													$.each(address, function (idx, format) {
-														current = format;
-														if (tab.index() === 0) {
-															$.each(fields.civic, function (key, value) {
-																current = current.replace('{' + key + '}', value);
-															});
-														} else if (tab.index() === 1) {
-															$.each(fields.rural, function (key, value) {
-																current = current.replace('{' + key + '}', value);
-															});
-														}
-														
-														$.each(fields.common, function (key, value) {
-															current = current.replace('{' + key + '}', value);
-														});
-														
-														if ($.trim(current) !== '') {
-															addressString.push($.trim(current));
-														}
-													});
-													
-													// Join address strings
-													addressString = addressString.join('\r\n');
-													
-													$('#addressDisplay').attr('readonly', false).val(addressString).attr('readonly', true);
-													$('div#addressEditPopup').data('kendoWindow').close();
-												}
-											}
-										}
+										role: 'button'
 									}
 								}
 							]
@@ -1265,11 +1348,10 @@ define({
 				},
 				{
 					tag: 'div',
-					id: 'addressLookupPopup',
 					name: 'addressLookupPopup',
 					data: {
 						role: 'window',
-						appendTo: 'form',
+						//appendTo: 'form',
 						modal: true,
 						visible: false,
 						resizable: false,
@@ -1293,7 +1375,7 @@ define({
 									tag: 'div',
 									class: 'fieldgroup',
 									group: [{
-										id: 'lookupPostalCode',
+										class: 'lookupPostalCode',
 										name: 'lookupPostalCode',
 										label: 'Postal Code',
 										tag: 'input',
@@ -1308,7 +1390,7 @@ define({
 									tag: 'div',
 									class: 'fieldgroup',
 									group: [{
-										id: 'addressLookupSearch',
+										class: 'addressLookupSearch',
 										name: 'addressLookupSearch',
 										tag: 'button',
 										type: 'button',
@@ -1336,7 +1418,7 @@ define({
 							fields: [
 								{
 									tag: 'div',
-									id: 'addressLookupGrid',
+									class: 'addressLookupGrid',
 									name: 'addressLookupGrid',
 									class: 'max-height-300 scroll-y',
 									data: {
@@ -1423,7 +1505,7 @@ define({
 							class: 'kpaf-row',
 							fields: [
 								{
-									id: 'addressLookupSelect',
+									class: 'addressLookupSelect',
 									name: 'addressLookupSelect',
 									tag: 'button',
 									type: 'button',
