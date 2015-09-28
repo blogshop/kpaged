@@ -656,7 +656,7 @@ define({
 						resizable: false,
 						draggable: true,
 						title: 'Edit Current Address',
-						width: 785,
+						width: '50%',
 						bind: {
 							events: {
 								open: function (e) {
