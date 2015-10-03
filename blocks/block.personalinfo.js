@@ -25,26 +25,17 @@ define({
 				class: 'kpaf-row field',
 				fields: [
 					{														
-						id: 'insuredID',
-						name: 'Insured_Id',
+						id: 'ID',
+						name: 'Id',
 						tag: 'input',
 						type: 'hidden',
 						data: {
-							bind: 'Insured_Id'
+							bind: 'Id'
 						}
 					},
 					{
-						id: 'entityLinkRowID',
-						name: 'entityLinkRowID',
-						tag: 'input',
-						type: 'hidden',
-						data: {
-							bind: 'entityLinkRowID'
-						}
-					},
-					{
-						id: 'insuredType',
-						name: 'insuredType',
+						id: 'type',
+						name: 'type`',
 						tag: 'input',
 						type: 'hidden',
 						data: {
@@ -62,7 +53,7 @@ define({
 							tag: 'input',
 							type: 'text',
 							class: 'medium',
-							style: 'width: 208px', 
+							style: 'width: 138px', 
 							data: {
 								role: 'dropdownlist',
 								bind: {
@@ -116,22 +107,23 @@ define({
 							}
 						}]
 					},*/
-					{
-						tag: 'div',
-						class: 'fieldgroup',
-						group: [{
-							id: 'lastName',
-							name: 'lastName',
-							label: 'Last Name',
-							tag: 'input',
-							type: 'text',
-							class: 'medium k-textbox',
-							data: {
-								bind: 'lastname'
-							}
-						}]
-					}
 				]
+			},
+			{
+				block: 'autorow',
+				config: {
+					items: [{
+						id: 'lastName',
+						name: 'lastName',
+						label: 'Last Name',
+						tag: 'input',
+						type: 'text',
+						class: 'large k-textbox',
+						data: {
+							bind: 'lastname'
+						}
+					}]
+				}
 			},
 			{
 
