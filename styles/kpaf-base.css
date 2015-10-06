@@ -141,7 +141,7 @@ section.light > * {
 
 section.region .intro .content.dark ,
 .slide .dark {
-	background-color: rgba(0, 0, 0, 0.35) !important;
+	background-color: rgba(0, 0, 0, 0.55) !important;
 }
 
 /* Rows */
