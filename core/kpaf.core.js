@@ -4174,6 +4174,8 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						
 						// Set validator
 						this._validator = this._binder.getValidator();
+						
+						return this;
 					},
 					enumerable: true,
 					configurable: false,
@@ -4550,6 +4552,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 							viewModel.set(prop, value);
 						};
 						
+						// TODO: A more recursive option? Like jQurey's deep extend?
 						if (data instanceof kendo.data.Model) {
 							data.forEach(function (value, prop) {
 								setProp(prop);
@@ -4565,17 +4568,18 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					}
 				},
 				dataBind: {
-					value: function (viewModel) {
+					value: function (viewModel, force) {
 						var binder = this._binder,
 							id = this._id,
 							config = this._config,
 							validationConfig = (config.hasOwnProperty('validation')) ? config.validation : false,
 							eventHandler = this._eventHandler,
-							event;
+							event,
+							force;
 						
 						// Bind the view-model
 						if (viewModel && viewModel instanceof kendo.data.ObservableObject) {
-							this._binder.bind('#' + id, viewModel);
+							this._binder.bind('#' + id, viewModel, force);
 						} else {
 							this._binder.bind('#' + id);
 						}		
@@ -4596,6 +4600,8 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 							event = eventHandler.getEvent('dataBound');
 							event.dispatch();
 						}
+						
+						return this;
 					},
 					enumerable: true,
 					configurable: false,
@@ -6172,6 +6178,99 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 				getValidator: function () {
 					return this._validator;
 				},
+				// TODO: I'm not sure if this is in its permanent place, but here will do for now, just moving logic out of bindNode so I can test
+				setNSBinding: function (binding, viewModel) {
+					//chunkIndex = null; // Reset the match index
+					var arrayRegex = /(?:^.*?)(\[\d+\])/,
+						bindPath = binding.split('.'), // Split by namespace
+						matches,
+						currentChunk = false,
+						chunkIndex = false,
+						isArray = false,
+						oa, // ObservableArray reference
+						oo; // ObservableObject reference;
+									
+					// TODO: Binding debug -- I had this before but maybe it was in the kPaged core version I lost
+					if (App.getConfig('debug') === true) {
+						App.log('Splitting binding on . char');
+						App.log('binding: ' + binding + ', chunks: ' + bindPath.length);
+						App.log(kendo.stringify(bindPath));
+					}
+
+					// TODO: Make this recursive so we can support multiple levels of nesting
+					// TODO: Unit test
+					if (bindPath.length > 1) {
+						currentChunk = bindPath.shift();
+						matches = arrayRegex.exec(binding);
+						
+						if (App.getConfig('debug') === true) {
+							App.log('Current chunk before array check');
+							App.log(currentChunk);
+						}
+						
+						if (matches !== null && matches.length > 0) {
+							if (App.getConfig('debug') === true) {
+								App.log('Found matches for array:');
+								App.log(matches);
+							}
+							
+							currentChunk = matches.shift(); // Regex matches start at index 1, so shift 1st result off
+							isArray = true;
+							
+							if (App.getConfig('debug') === true) App.log('Shifting current chunk to ' + currentChunk);
+						} else {
+							App.log('Current chunk is not array');
+						}
+						
+						if (App.getConfig('debug') === true) {
+							App.log('Current chunk after array check');
+							App.log(currentChunk);
+						}
+
+						// We only care about the first match
+						if (isArray) {
+							if (App.getConfig('debug') === true) App.log('Array found, get the index to bind to...');
+							
+							chunkIndex = matches[0].replace('[', '').replace(']', ''); // Strip brackets
+							chunkIndex = parseInt(chunkIndex);
+							
+							if (App.getConfig('debug') === true) App.log('Bind to index[' + chunkIndex + ']');
+						}
+						
+						// Get the name of the current chunk of the binding path
+						currentChunk = currentChunk.replace('[' + chunkIndex.toString() + ']', ''); // If it was an array we need to update the chunk name to strip out the array brackets
+						
+						// Just in case it's an empty string... not sure how that would happen but a check doesn't hurt
+						currentChunk = currentChunk || false;
+						chunkIndex = (typeof chunkIndex === 'number') ? chunkIndex : false;
+						
+						if (App.getConfig('debug') === true) App.log(currentChunk, chunkIndex);
+						
+						if (currentChunk && typeof chunkIndex === 'number') {
+							viewModel.set(currentChunk, new kendo.data.ObservableArray([]));
+							oa = viewModel.get(currentChunk);
+							
+							if (App.getConfig('debug') === true) {
+								App.log(oa instanceof kendo.data.ObservableArray);
+								App.log('Created new ObservableArray');
+							}
+							
+							oa.push(new kendo.data.ObservableObject());
+						} else if (currentChunk && !chunkIndex) {
+							// Exclusive not
+							viewModel.set(currentChunk, new kendo.data.ObservableObject({}));
+							
+							if (bindPath.length > 0) {
+								//App.log(kendo.stringify(bindPath));
+								//oo = viewModel.get(currentChunk);
+								//currentChunk = bindPath.shift();
+								viewModel.set(binding, '');
+							}
+						}
+					} else {
+						viewModel.set(binding, '');
+					}
+				},
 				bindNode: function (node, bindings) {
 					var that = this,
 						director = that.getDirector(),
@@ -6210,31 +6309,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 
 								// Set nested bindings
 								if (typeof bindings === 'string' && bindings !== '' && bindings !== null) {
-									chunkIndex = null; // Reset the match index
-									// TODO: Throw an error if null
-									bindPath = bindings.split('.'); // Split by namespace
-
-									// TODO: Make this recursive so we can support multiple levels of nesting
-									if (bindPath.length > 1) {
-										currentChunk = bindPath.shift();
-										matches = arrayRegex.exec(bindings);
-										currentChunk = matches.shift();
-
-										// We only care about the first match
-										chunkIndex = matches[0].replace('[', '').replace(']', ''); // Strip brackets
-										chunkIndex = parseInt(chunkIndex);
-
-										// Get the name of the current chunk of the binding path
-										currentChunk = currentChunk.replace('[' + chunkIndex.toString() + ']', '')
-
-										if (currentChunk !== '' && chunkIndex !== null) {
-											that._viewModel.set(currentChunk, new kendo.data.ObservableArray([]));
-											oa = that._viewModel.get(currentChunk);
-											oa.push(new kendo.data.ObservableObject());
-										}
-									} else {
-										that._viewModel.set(bindings, '');
-									}
+									that.setNSBinding(bindings, that._viewModel);
 								}
 							} else {
 								val.push('value: ' + bindings);
@@ -6266,32 +6341,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 
 											// Set nested bindings
 											if (typeof binding === 'string' && binding !== '' && binding !== null) {
-												chunkIndex = null; // Reset the match index
-												// TODO: Throw an error if null
-												bindPath = binding.split('.'); // Split by namespace
-
-												// TODO: Make this recursive so we can support multiple levels of nesting
-												if (bindPath.length > 1) {
-													currentChunk = bindPath.shift();
-													matches = arrayRegex.exec(binding);
-													currentChunk = matches.shift();
-
-													// We only care about the first match
-													chunkIndex = matches[0].replace('[', '').replace(']', ''); // Strip brackets
-													chunkIndex = parseInt(chunkIndex);
-
-													// Get the name of the current chunk of the binding path
-													currentChunk = currentChunk.replace('[' + chunkIndex.toString() + ']', '')
-
-													if (currentChunk !== '' && chunkIndex !== null) {
-														that._viewModel.set(currentChunk, new kendo.data.ObservableArray([]));
-														oa = that._viewModel.get(currentChunk);
-														oa.push(new kendo.data.ObservableObject());
-													}
-												} else {
-													that._viewModel.set(binding, '');
-												}
-												// TODO: accept function
+												that.setNSBinding(binding, that._viewModel);
 											}
 										} else {
 											val.push(type + ': ' + binding);
@@ -6433,14 +6483,14 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					
 					return this;
 				},
-				bind: function (selector, viewModel) {
+				bind: function (selector, viewModel, force) {
 					var block = this.getDirector().getBlock(),
 						page = this.getDirector().getPage(),
-						bindInjected = false;
+						bindInjected = false,
+						force = force || false,
+						selector = selector || 'body';
 					
-					selector = selector || 'body';
-					
-					if (viewModel instanceof kendo.data.ObservableObject && block.autoBind === false) {
+					if (viewModel instanceof kendo.data.ObservableObject && (block.autoBind === false || force === true)) {
 						bindInjected = true;
 					} else {
 						viewModel = this._viewModel;
@@ -6455,7 +6505,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 						viewModel.set('_page', page);
 					}
 					
-					if (block.autoBind || (bindInjected && block.dataBound === false)) {
+					if (block.autoBind || (bindInjected && block.dataBound === false) || (bindInjected && force)) {
 						if (block.autoBind) {
 							kendo.bind($(selector), viewModel);
 						} else {

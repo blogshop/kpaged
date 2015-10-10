@@ -36,14 +36,14 @@ define({
 							}
 						},
 						{
-							id: 'personalWebPage',
-							name: 'personalWebPage',
-							label: 'Web Page',
+							id: 'website',
+							name: 'website',
+							label: 'Website',
 							tag: 'input',
 							type: 'text',
 							class: 'medium k-textbox',
 							data: {
-								bind: 'webPage'
+								bind: 'website'
 							}
 						}
 					]
@@ -56,7 +56,7 @@ define({
 						{
 							id: 'homePhone',
 							name: 'homePhone',
-							label: 'Home',
+							label: 'Home Phone',
 							tag: 'input',
 							type: 'number',
 							class: 'medium k-textbox',
@@ -70,7 +70,7 @@ define({
 						{
 							id: 'mobilePhone',
 							name: 'mobilePhone',
-							label: 'Mobile',
+							label: 'Mobile Phone',
 							tag: 'input',
 							type: 'text',
 							class: 'medium k-textbox',
