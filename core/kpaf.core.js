@@ -416,10 +416,11 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 			
 			return this;
 		},
-		execute: function () {
+		execute: function (route) {
 			var that = this,
 				pages,
 				router,
+				route = route || null,
 				adapter,
 				url;
 				
@@ -427,6 +428,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 			router = App.getRouter();
 			
 			// Add routes
+			// TODO: Double check to make sure this isn't duplicated in the App.Router.add method
 			pages.each(function (name, config) {
 				if (config.hasOwnProperty('route')) {
 					if (typeof config.route === 'string') {
@@ -437,14 +439,18 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 				}
 			});
 			
-			// Rebuild URL fragments so they're in a consistent order
-			url = [
-				window.location.pathname,
-				window.location.search,
-				//window.location.hash,
-			].join('');
-			
-			router.parse(url);
+			if (route) {
+				router.parse(route);
+			} else {
+				// Rebuild URL fragments so they're in a consistent order
+				url = [
+					window.location.pathname,
+					window.location.search,
+					//window.location.hash,
+				].join('');
+				
+				router.parse(url);
+			}
 			
 			// Kendo UI TabStrip switcher
 			// TODO: Implement as plugin/module
@@ -1586,7 +1592,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 			},
 			add: function (pattern, callback) {
 				pattern = pattern;
-				App.log('Attempting to match pattern [' + pattern + ']');
+				App.log('Adding route pattern [' + pattern + '] to routes');
 				
 				// Default -- no controller, just render the page
 				callback = callback || function (args) {
@@ -3802,6 +3808,7 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 							if (viewModel instanceof kendo.data.ObservableObject) {
 								data = $.extend(true, new kendo.data.ObservableObject(), viewModel);
 								
+								// TODO: Let's change the var names... prop/key same thing in JS
 								data.forEach(function (prop, key) {										
 									// Fry internal references from the view-model
 									if (filterKeys.indexOf(key) > -1) {
