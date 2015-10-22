@@ -4154,6 +4154,55 @@ define(['signals', 'crossroads', 'hasher'], function (signals, crossroads, hashe
 					configurable: false,
 					writable: true
 				},
+				// TODO: Implement Observable/Base > Blocks > Modules inheritance...
+				// There's a lot of code duplication going on here
+				// Accepts an object or a kendo observable
+				// Blocks should be able to do this too (if autoBind is set or something?)
+				setData: {
+					value: function (data, viewModel) {
+						var isObservable = false;
+						// where does the viewmodel come from?
+						viewModel = viewModel || this._viewModel;
+						isObservable = viewModel instanceof kendo.data.ObservableObject;
+						
+						if (!isObservable) return this;
+						
+						// TODO: Cache this function
+						var setProp = function (prop) {
+							value = data[prop];
+							type = typeof value;
+
+							switch (type) {
+								case 'string':
+									value = (value.length > 0) ? value : '';
+									break;
+								case 'number':
+									value = (parseInt(value) > -1) ? value : 0;
+									break;
+								case 'boolean':
+									break;
+								default:
+									break;
+							}
+							
+							viewModel.set(prop, value);
+						};
+						
+						// TODO: A more recursive option? Like jQurey's deep extend?
+						if (data instanceof kendo.data.Model) {
+							data.forEach(function (value, prop) {
+								setProp(prop);
+							});
+							
+						} else if (typeof data === 'object' && data !== 'undefined') {
+							for (prop in data) {
+								setProp(prop);
+							}
+						}
+						
+						return this;
+					}
+				},
 				dataBind: {
 					value: function (viewModel) {
 						var binder = this._binder,

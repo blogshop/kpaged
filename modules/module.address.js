@@ -30,7 +30,7 @@ define({
 			addressString = [],
 			current;
 			
-		tab = tabs.select();
+		if (typeof tabs !== 'undefined') tab = tabs.select();
 		fields = {
 			// Civic address fields
 			civic: {
@@ -60,71 +60,72 @@ define({
 			}
 		};
 		
-		// Create a string representation of the address fields
-		if (tab.index() === 0) {
-			// Civic address selected
-			// Clear all rural values
-			$.each(fields.rural, function (key, value) {
-				viewModel.set(key, '');
-			});
-			
-			if (fields.civic.suiteNumber !== '') {
-				address.push('{suiteNumber}-{streetNumber} {streetName} {streetType} {streetDirection}');
-			} else {
-				address.push('{streetNumber} {streetName} {streetType} {streetDirection}');
-			}
-			address.push('{poBox} {station}');
-		} else if (tab.index() === 1) {
-			// Rural address selected
-			// Clear all civic values
-			$.each(fields.civic, function (key, value) {
-				viewModel.set(key, ''); 
-			});
-			
-			if (fields.rural.lot !== '' && fields.rural.concession !== '') {
-				address.push('{lotNumber} {concessionNumber}');
-			}
-			if (fields.rural.site !== '' && fields.rural.comp !== '') {
-				address.push('{site} {comp} {box}');
-			}
-			address.push('{rr} {station}');
-		}
-		
-		// Append city/municipality, zone and postal code
-		address.push('{city} {zone} {postcode}');
-
-		if (fields.common.country == "USA") {
-			address.push('{country}');
-		}
-		
-		// Replace formatting keys with form values
-		$.each(address, function (idx, format) {
-			current = format;
+		if (typeof tab !== 'undefined') {
+			// Create a string representation of the address fields
 			if (tab.index() === 0) {
-				$.each(fields.civic, function (key, value) {
-					current = current.replace('{' + key + '}', value);
-				});
-			} else if (tab.index() === 1) {
+				// Civic address selected
+				// Clear all rural values
 				$.each(fields.rural, function (key, value) {
-					current = current.replace('{' + key + '}', value);
+					viewModel.set(key, '');
 				});
+				
+				if (fields.civic.suiteNumber !== '') {
+					address.push('{suiteNumber}-{streetNumber} {streetName} {streetType} {streetDirection}');
+				} else {
+					address.push('{streetNumber} {streetName} {streetType} {streetDirection}');
+				}
+				address.push('{poBox} {station}');
+			} else if (tab.index() === 1) {
+				// Rural address selected
+				// Clear all civic values
+				$.each(fields.civic, function (key, value) {
+					viewModel.set(key, ''); 
+				});
+				
+				if (fields.rural.lot !== '' && fields.rural.concession !== '') {
+					address.push('{lotNumber} {concessionNumber}');
+				}
+				if (fields.rural.site !== '' && fields.rural.comp !== '') {
+					address.push('{site} {comp} {box}');
+				}
+				address.push('{rr} {station}');
 			}
 			
-			$.each(fields.common, function (key, value) {
-				current = current.replace('{' + key + '}', value);
+			// Append city/municipality, zone and postal code
+			address.push('{city} {zone} {postcode}');
+
+			if (fields.common.country == "USA") {
+				address.push('{country}');
+			}
+			
+			// Replace formatting keys with form values
+			$.each(address, function (idx, format) {
+				current = format;
+				if (tab.index() === 0) {
+					$.each(fields.civic, function (key, value) {
+						current = current.replace('{' + key + '}', value);
+					});
+				} else if (tab.index() === 1) {
+					$.each(fields.rural, function (key, value) {
+						current = current.replace('{' + key + '}', value);
+					});
+				}
+				
+				$.each(fields.common, function (key, value) {
+					current = current.replace('{' + key + '}', value);
+				});
+				
+				if ($.trim(current) !== '') {
+					addressString.push($.trim(current));
+				}
 			});
 			
-			if ($.trim(current) !== '') {
-				addressString.push($.trim(current));
-			}
-		});
-		
-		// Join address strings
-		addressString = addressString.join('\r\n');
-		
-		that.addressDisplay.attr('readonly', false).val(addressString).attr('readonly', true);
-		$('div[name=addressEditPopup]').data('kendoWindow').close();
-		
+			// Join address strings
+			addressString = addressString.join('\r\n');
+			
+			that.addressDisplay.attr('readonly', false).val(addressString).attr('readonly', true);
+			$('div[name=addressEditPopup]').data('kendoWindow').close();
+		}
 	},
 	events: {
 		initialized: function () {
