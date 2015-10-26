@@ -217,8 +217,12 @@ pip-log.txt
 .coverage
 .tox
 
-#Translations
+# Translations
 *.mo
 
 #Mr Developer
 .mr.developer.cfg
+
+# Vendor Libs
+/lib/*
+/lib/*/
